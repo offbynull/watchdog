@@ -16,6 +16,7 @@
  */
 package com.offbynull.watchdog.instrumenter;
 
+import static com.offbynull.watchdog.instrumenter.InstrumentationState.ControlFlag.NO_INSTRUMENT;
 import static com.offbynull.watchdog.instrumenter.InternalFields.INSTRUMENTED_MARKER_FIELD_NAME;
 import static com.offbynull.watchdog.instrumenter.InternalFields.INSTRUMENTED_MARKER_FIELD_VALUE;
 import org.apache.commons.lang3.Validate;
@@ -35,7 +36,9 @@ final class CheckMarkerInstrumentationPass implements InstrumentationPass {
         }
         
         Validate.isTrue(
-                fieldNode.value == INSTRUMENTED_MARKER_FIELD_VALUE,
+                ((Long) fieldNode.value) == INSTRUMENTED_MARKER_FIELD_VALUE,
                 "Class %s instrumented with different version of instrumented: %d", classNode.name, fieldNode.value);
+
+        state.control(NO_INSTRUMENT);
     }
 }

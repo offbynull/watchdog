@@ -62,14 +62,24 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                 continue;
             }
             
+            // Skip method if method has already been instrumented by a previous pass
+            MethodDescription methodDesc = new MethodDescription(classNode.name, methodNode.name, methodNode.desc);
+            if (state.getSkipMethods().contains(methodDesc)) {
+                continue;
+            }
+            
+            // Since this method is going to be instrumented now, add it to the skip collection so it doesn't get instrumented by other
+            // again by one of the other passes.
+            state.getSkipMethods().add(methodDesc);
+            
             // Skip if method isn't annoted for instrumentation
             if (methodNode.visibleAnnotations != null
                     && methodNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE))) {
                 continue;
             }
 
-            
-            
+
+
             // Get new LVT index for the watchdog
             VariableTable varTable = new VariableTable(classNode, methodNode);
             Variable watchdogVar = varTable.acquireExtra(WATCHDOG_TYPE);

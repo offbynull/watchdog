@@ -22,6 +22,7 @@ import com.offbynull.watchdog.user.WatchdogLauncher;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import static org.apache.commons.lang3.reflect.ConstructorUtils.invokeConstructor;
+import static org.apache.commons.lang3.reflect.MethodUtils.invokeExactStaticMethod;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -32,7 +33,7 @@ public final class InstrumentationTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void mustInstrumentBranchesTest() throws Exception {
+    public void mustInstrumentBranches() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
             
@@ -44,7 +45,7 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentLookupSwitchTest() throws Exception {
+    public void mustInstrumentLookupSwitch() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
             
@@ -56,7 +57,7 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentTableSwitchTest() throws Exception {
+    public void mustInstrumentTableSwitch() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
@@ -68,13 +69,25 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentRecursiveTest() throws Exception { // entry point of methods must get a check -- this is what this test does
+    public void mustInstrumentRecursive() throws Exception { // entry point of methods must get a check -- this is what this test does
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
             expectedException.expect(WatchdogException.class);
             WatchdogLauncher.launch(0L, (wd) -> {
                 createObject(cls, wd);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentProperlyOnBothWatchdogArgAndWatchAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("DoubleInstrumentationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("DoubleInstrumentationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(0L, (wd) -> {
+                invokeStaticMethod(cls, "test", wd);
             });
         }
     }
@@ -85,6 +98,16 @@ public final class InstrumentationTest {
         } catch (InvocationTargetException ite) {
             throw (RuntimeException) ite.getTargetException();
         } catch (NoSuchMethodException | IllegalAccessException | InstantiationException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+    
+    private void invokeStaticMethod(Class<?> cls, String name, Object... args) {
+        try {
+            invokeExactStaticMethod(cls, name, args);
+        } catch (InvocationTargetException ite) {
+            throw (RuntimeException) ite.getTargetException();
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw new RuntimeException(ex);
         }
     }

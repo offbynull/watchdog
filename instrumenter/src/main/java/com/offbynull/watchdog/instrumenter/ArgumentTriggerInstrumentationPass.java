@@ -58,10 +58,20 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
         Collection<MethodNode> methodNodes = findMethodsWithParameter(classNode.methods, WATCHDOG_TYPE);
 
         for (MethodNode methodNode : methodNodes) {
-            // Skip methods without implementation (abstract/interface/etc..)
+            // Skip method if no implementation (abstract/interface/etc..)
             if (methodNode.instructions == null) {
                 continue;
             }
+            
+            // Skip method if method has already been instrumented by a previous pass
+            MethodDescription methodDesc = new MethodDescription(classNode.name, methodNode.name, methodNode.desc);
+            if (state.getSkipMethods().contains(methodDesc)) {
+                continue;
+            }
+            
+            // Since this method is going to be instrumented now, add it to the skip collection so it doesn't get instrumented by other
+            // again by one of the other passes.
+            state.getSkipMethods().add(methodDesc);
 
             
             

@@ -30,5 +30,5 @@ final class InternalFields {
     static final int INSTRUMENTED_MARKER_FIELD_ACCESS = Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC;
     static final Type INSTRUMENTED_MARKER_FIELD_TYPE = Type.LONG_TYPE;
     static final String INSTRUMENTED_MARKER_FIELD_NAME = "__WATCHDOG_INSTRUMENTATION_VERSION";
-    static final Long INSTRUMENTED_MARKER_FIELD_VALUE = 0L;
+    static final long INSTRUMENTED_MARKER_FIELD_VALUE = 0L;
 }
