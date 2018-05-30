@@ -1,0 +1,149 @@
+/*
+ * Copyright (c) 2017, Kasra Faghihi, All rights reserved.
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3.0 of the License, or (at your option) any later version.
+ * 
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library.
+ */
+package com.offbynull.watchdog.instrumenter.asm;
+
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findInvocationsOf;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findInvocationsWithParameter;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findLocalVariableNodeForInstruction;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethod;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethodsWithName;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethodsWithParameter;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethodsWithParameters;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findStaticMethods;
+import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.searchForOpcodes;
+import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipResourcesAsClassNodes;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+import org.apache.commons.lang3.reflect.MethodUtils;
+import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+
+public final class SearchUtilsTest {
+    private ClassNode classNode;
+    
+    @Before
+    public void setUp() throws IOException {
+        classNode = readZipResourcesAsClassNodes("SearchUtilsStubs.zip").get("SearchUtilsStubs.class");
+    }
+
+    @Test
+    public void mustFindMethodsWithName() {
+        List<MethodNode> methodNodes = findMethodsWithName(classNode.methods, "syncTest");
+        
+        assertEquals(1, methodNodes.size());
+        assertEquals("syncTest", methodNodes.get(0).name);
+    }
+
+    @Test
+    public void mustFindStaticMethods() throws IOException {
+        classNode = readZipResourcesAsClassNodes("StaticMethodTest.zip").get("StaticMethodTest.class");
+        List<MethodNode> methodNodes = findStaticMethods(classNode.methods);
+        
+        assertEquals(1, methodNodes.size());
+        assertEquals("yesStatic", methodNodes.get(0).name);
+    }
+    
+    @Test
+    public void mustFindMethodsWithIntParameters() {
+        List<MethodNode> methodNodes = findMethodsWithParameter(classNode.methods, Type.INT_TYPE);
+        
+        assertEquals(2, methodNodes.size());
+        assertEquals("method1", methodNodes.get(0).name);
+        assertEquals("method2", methodNodes.get(1).name);
+    }
+
+    @Test
+    public void mustFindMethodsWithStringParameters() {
+        List<MethodNode> methodNodes = findMethodsWithParameter(classNode.methods, Type.getType(String.class));
+        
+        assertEquals(1, methodNodes.size());
+        assertEquals("method2", methodNodes.get(0).name);
+    }
+
+    @Test
+    public void mustFindMethodsWithSpecificSetOfParameters() {
+        List<MethodNode> methodNodes = findMethodsWithParameters(classNode.methods,
+                Type.INT_TYPE, Type.getType(List.class), Type.DOUBLE_TYPE);
+        
+        assertEquals(1, methodNodes.size());
+        assertEquals("method1", methodNodes.get(0).name);
+    }
+
+    @Test
+    public void mustFindSpecificMethod() {
+        MethodNode methodNode = findMethod(classNode.methods, false, Type.VOID_TYPE, "method1",
+                Type.INT_TYPE, Type.getType(List.class), Type.DOUBLE_TYPE);
+        
+        assertEquals("method1", methodNode.name);
+    }
+
+    @Test
+    public void mustFindOpcodeWithinMethod() {
+        MethodNode methodNode = findMethodsWithName(classNode.methods, "syncTest").get(0);
+        
+        List<AbstractInsnNode> insns = searchForOpcodes(methodNode.instructions, Opcodes.MONITORENTER, Opcodes.MONITOREXIT);
+        assertEquals(3, insns.size());
+        assertEquals(Opcodes.MONITORENTER, insns.get(0).getOpcode());
+        assertEquals(Opcodes.MONITOREXIT, insns.get(1).getOpcode());
+        assertEquals(Opcodes.MONITOREXIT, insns.get(2).getOpcode()); // hidden trycatch block generated by compiler
+    }
+
+    @Test
+    public void mustFindCallToPrintlnThroughParameterTypeMatching() {
+        MethodNode methodNode = findMethodsWithName(classNode.methods, "syncTest").get(0);
+        List<AbstractInsnNode> insns = findInvocationsWithParameter(methodNode.instructions, Type.getType(String.class));
+        
+        assertEquals(1, insns.size());
+        assertEquals("println", ((MethodInsnNode) insns.get(0)).name);
+    }
+
+    @Test
+    public void mustFindCallToPrintlnThroughMethodMatching() {
+        MethodNode methodNode = findMethodsWithName(classNode.methods, "syncTest").get(0);
+        List<AbstractInsnNode> insns = findInvocationsOf(methodNode.instructions,
+                MethodUtils.getAccessibleMethod(PrintStream.class, "println", String.class));
+        
+        assertEquals(1, insns.size());
+        assertEquals("println", ((MethodInsnNode) insns.get(0)).name);
+    }
+
+    @Test
+    public void mustFindLocalVariableNodeForInstruction() {
+        MethodNode methodNode = findMethodsWithName(classNode.methods, "localVariablesTest").get(0);
+        List<AbstractInsnNode> insns = findInvocationsOf(methodNode.instructions,
+                MethodUtils.getAccessibleMethod(PrintStream.class, "println", String.class));
+        
+        AbstractInsnNode insnNode = insns.get(0);
+        
+        LocalVariableNode lvn0 = findLocalVariableNodeForInstruction(methodNode.localVariables, methodNode.instructions, insnNode, 0);
+        LocalVariableNode lvn1 = findLocalVariableNodeForInstruction(methodNode.localVariables, methodNode.instructions, insnNode, 1);
+        LocalVariableNode lvn2 = findLocalVariableNodeForInstruction(methodNode.localVariables, methodNode.instructions, insnNode, 2);
+        
+        assertEquals(lvn0.name, "this");
+        assertEquals(lvn1.name, "val1");
+        assertEquals(lvn2.name, "val2");
+    }
+}

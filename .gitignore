@@ -1,0 +1,10 @@
+/user/target/
+/instrumenter/target/
+/build-tools/target/
+/maven-plugin/target/
+/ant-plugin/target/
+/target/
+/java-agent/target/
+/java-agent/nbproject/
+/gradle-plugin/target/
+/gradle-plugin/nbproject/
