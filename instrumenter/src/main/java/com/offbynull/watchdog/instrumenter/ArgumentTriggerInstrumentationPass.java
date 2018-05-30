@@ -92,7 +92,9 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
                                             call(GET_METHOD),
                                             saveVar(watchdogArgVar)
                                     )
-                            )
+                            ),
+                            debugMarker(markerType, "Checking watchdog"),
+                            call(CHECK_METHOD, loadVar(watchdogArgVar))
                     );
             insnList.insert(preambleInsnList);
             

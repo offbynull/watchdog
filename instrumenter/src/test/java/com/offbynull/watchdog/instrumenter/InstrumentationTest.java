@@ -32,9 +32,45 @@ public final class InstrumentationTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void mustProperlyExecuteSanityTest() throws Exception {
+    public void mustInstrumentBranchesTest() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(0L, (wd) -> {
+                createObject(cls, wd);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentLookupSwitchTest() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(0L, (wd) -> {
+                createObject(cls, wd);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentTableSwitchTest() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(0L, (wd) -> {
+                createObject(cls, wd);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentRecursiveTest() throws Exception { // entry point of methods must get a check -- this is what this test does
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
             expectedException.expect(WatchdogException.class);
             WatchdogLauncher.launch(0L, (wd) -> {

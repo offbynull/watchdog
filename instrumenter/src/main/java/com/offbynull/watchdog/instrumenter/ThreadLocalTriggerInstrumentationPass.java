@@ -84,7 +84,9 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                     merge(
                             debugMarker(markerType, "Get watchdog from TLS"),
                             call(GET_METHOD),
-                            saveVar(watchdogVar)
+                            saveVar(watchdogVar),
+                            debugMarker(markerType, "Checking watchdog"),
+                            call(CHECK_METHOD, loadVar(watchdogVar))
                     );
             insnList.insert(preambleInsnList);
             
