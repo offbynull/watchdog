@@ -48,7 +48,7 @@ public final class InstrumentationTest {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
             
             expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(0L, (wd) -> {
+            WatchdogLauncher.launch(100L, (wd) -> {
                 createObject(cls, wd);
             });
         }
@@ -60,7 +60,7 @@ public final class InstrumentationTest {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
             
             expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(0L, (wd) -> {
+            WatchdogLauncher.launch(100L, (wd) -> {
                 createObject(cls, wd);
             });
         }
@@ -72,7 +72,7 @@ public final class InstrumentationTest {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
             expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(0L, (wd) -> {
+            WatchdogLauncher.launch(100L, (wd) -> {
                 createObject(cls, wd);
             });
         }
@@ -84,7 +84,7 @@ public final class InstrumentationTest {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
             expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(0L, (wd) -> {
+            WatchdogLauncher.launch(10L, (wd) -> {
                 createObject(cls, wd);
             });
         }
@@ -112,7 +112,7 @@ public final class InstrumentationTest {
         originalJarEntries.add(new JarEntry("LookupSwitchTest.class", classContent));
         File originalJarFile = createJar(originalJarEntries.toArray(new JarEntry[0]));
         
-        // Get current classpath (core JVM classes) and add to it the newly created JAR
+        // Get current classpath (includes core JVM classes) and add to it the newly created JAR
         List<File> classpath = getClasspath();
         classpath.addAll(classpath);
         classpath.add(originalJarFile);
