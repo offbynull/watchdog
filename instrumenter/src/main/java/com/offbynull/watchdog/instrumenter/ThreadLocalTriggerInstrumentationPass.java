@@ -37,7 +37,6 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -57,7 +56,7 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
         Collection<MethodNode> methodNodes = classNode.methods;
         
         boolean classAnnotated = classNode.visibleAnnotations != null
-                && classNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
+                && classNode.visibleAnnotations.stream().anyMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
 
         for (MethodNode methodNode : methodNodes) {
             // Skip methods without implementation (abstract/interface/etc..)
@@ -77,8 +76,8 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
             
             // Skip if method or class isn't annotated for instrumentation
             boolean methodAnnotated = methodNode.visibleAnnotations != null
-                    && methodNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
-            if (methodAnnotated || classAnnotated) {
+                    && methodNode.visibleAnnotations.stream().anyMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
+            if (!methodAnnotated && !classAnnotated) {
                 continue;
             }
 
@@ -102,10 +101,11 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                             debugMarker(markerType, "Checking watchdog"),
                             call(CHECK_METHOD, loadVar(watchdogVar))
                     );
+            AbstractInsnNode lastPreambleInsnNode = preambleInsnList.getLast();
             insnList.insert(preambleInsnList);
             
             // Call the watchdog
-            AbstractInsnNode insnNode = insnList.getFirst();
+            AbstractInsnNode insnNode = lastPreambleInsnNode.getNext(); // first original instruction will be after our preamble
             while (insnNode != null) {
                 // On branch, invoke WatchDog.check()
                 if (insnNode instanceof JumpInsnNode

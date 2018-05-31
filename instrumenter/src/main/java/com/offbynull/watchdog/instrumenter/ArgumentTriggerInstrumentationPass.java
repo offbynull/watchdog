@@ -23,7 +23,7 @@ import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType
 import static com.offbynull.watchdog.instrumenter.generators.DebugGenerators.debugMarker;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.call;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.ifObjectsEqual;
-import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.loadNull;
+import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.loadStaticField;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.loadVar;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.merge;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.saveVar;
@@ -95,28 +95,29 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
             // At the beginning of the method, if watchdog arg is null grab it from threadlocal storage
             InsnList preambleInsnList =
                     merge(
-                            debugMarker(markerType, "Checking if watchdog supplied"),
-                            ifObjectsEqual(loadNull(), loadVar(watchdogArgVar), 
+                            debugMarker(markerType, "Checking if watchdog placeholder supplied"),
+                            ifObjectsEqual(loadVar(watchdogArgVar), loadStaticField(PLACEHOLDER_FIELD),
                                     merge(
-                                            debugMarker(markerType, "Watchdog not supplied -- grabbing from TLS"),
+                                            debugMarker(markerType, "Watchdog placeholder supplied -- grabbing real from TLS"),
                                             call(GET_METHOD),
                                             saveVar(watchdogArgVar)
                                     )
                             ),
-                            debugMarker(markerType, "Checking watchdog"),
+                            debugMarker(markerType, "Checking watchdog1"),
                             call(CHECK_METHOD, loadVar(watchdogArgVar))
                     );
+            AbstractInsnNode lastPreambleInsnNode = preambleInsnList.getLast();
             insnList.insert(preambleInsnList);
             
             // Call the watchdog
-            AbstractInsnNode insnNode = insnList.getFirst();
+            AbstractInsnNode insnNode = lastPreambleInsnNode.getNext(); // first original instruction will be after our preamble
             while (insnNode != null) {
                 // On branch, invoke WatchDog.check()
                 if (insnNode instanceof JumpInsnNode
                         || insnNode instanceof LookupSwitchInsnNode
                         || insnNode instanceof TableSwitchInsnNode) {
                     InsnList trackInsnList = merge(
-                            debugMarker(markerType, "Checking watchdog"),
+                            debugMarker(markerType, "Checking watchdog2"),
                             call(CHECK_METHOD, loadVar(watchdogArgVar))
                     );
                     insnList.insertBefore(insnNode, trackInsnList);
@@ -131,6 +132,8 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
                     String name = fieldInsnNode.name;
                     if (WATCHDOG_TYPE.getInternalName().equals(owner) && PLACEHOLDER_FIELD.getName().equals(name)) {
                         InsnList replaceInsnList = loadVar(watchdogArgVar);
+
+                        AbstractInsnNode replaceLastInsnNode = replaceInsnList.getLast();
                         
                         insnList.insertBefore(insnNode, replaceInsnList);
                         insnList.remove(insnNode);
@@ -138,7 +141,7 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
                         // update insnNode to last instruction of replacement list -- so when insnNode.getNext() is called below it will
                         // move to the next instruction to the method (it does this because we've already shoved these isntructions into
                         // the instructions for the method above -- the call to insertBefore)
-                        insnNode = replaceInsnList.getLast();
+                        insnNode = replaceLastInsnNode;
                     }
                 }
                 

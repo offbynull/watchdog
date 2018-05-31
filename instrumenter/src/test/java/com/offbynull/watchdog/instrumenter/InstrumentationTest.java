@@ -163,13 +163,13 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentProperlyOnBothWatchdogArgAndWatchAnnotation() throws Exception {
-        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("DoubleInstrumentationTest.zip")) {
-            Class<?> cls = (Class<?>) classLoader.loadClass("DoubleInstrumentationTest");
+    public void mustInstrumentRecrusiveProperlyOnBothWatchdogArgAndWatchAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixSameMethodTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixSameMethodTest");
             
             expectedException.expect(WatchdogException.class);
             WatchdogLauncher.launch(0L, (wd) -> {
-                invokeStaticMethod(cls, "test", wd);
+                createObject(cls);
             });
         }
     }

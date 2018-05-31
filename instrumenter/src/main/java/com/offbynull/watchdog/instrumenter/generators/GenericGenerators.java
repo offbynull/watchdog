@@ -18,6 +18,7 @@ package com.offbynull.watchdog.instrumenter.generators;
 
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IincInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
@@ -456,6 +458,70 @@ public final class GenericGenerators {
                                                    // types aren't set
         }
 
+        return ret;
+    }
+    
+    /**
+     * Load a static field on to the stack. If the static field is of a primitive type, that primitive value will be directly loaded on to
+     * the stack (the field won't be referenced). If the static field is an object type, the actual field will be loaded onto the stack.
+     * @param field reflection reference to a static field
+     * @return instructions to grab the object stored in the static field {@code field}
+     * @throws NullPointerException if any argument is {@code null}
+     * @throws IllegalArgumentException if {@code field} is not static
+     */
+    public static InsnList loadStaticField(Field field) {
+        Validate.notNull(field);
+        Validate.isTrue((field.getModifiers() & Modifier.STATIC) != 0);
+        
+        String owner = Type.getInternalName(field.getDeclaringClass());
+        String name = field.getName();
+        Type type = Type.getType(field.getType());
+        
+        field.setAccessible(true);
+        
+        InsnList ret = new InsnList();
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+            case Type.BYTE:
+            case Type.CHAR:
+            case Type.SHORT:
+            case Type.INT:
+                try {
+                    ret.add(new LdcInsnNode(field.getInt(null)));
+                } catch (IllegalAccessException iae) {
+                    throw new IllegalStateException(iae); // should never happen
+                }
+                break;
+            case Type.LONG:
+                try {
+                    ret.add(new LdcInsnNode(field.getLong(null)));
+                } catch (IllegalAccessException iae) {
+                    throw new IllegalStateException(iae); // should never happen
+                }    
+                break;
+            case Type.FLOAT:
+                try {
+                    ret.add(new LdcInsnNode(field.getFloat(null)));
+                } catch (IllegalAccessException iae) {
+                    throw new IllegalStateException(iae); // should never happen
+                }
+                break;
+            case Type.DOUBLE:
+                try {
+                    ret.add(new LdcInsnNode(field.getDouble(null)));
+                } catch (IllegalAccessException iae) {
+                    throw new IllegalStateException(iae); // should never happen
+                }
+                break;
+            case Type.OBJECT:
+            case Type.ARRAY:
+                ret.add(new FieldInsnNode(Opcodes.GETSTATIC, owner, name, type.getDescriptor()));
+                break;
+            default:
+                throw new IllegalStateException(); // should never happen, there is code in Variable/VariableTable to make sure invalid
+                                                   // types aren't set
+        }
+        
         return ret;
     }
 
