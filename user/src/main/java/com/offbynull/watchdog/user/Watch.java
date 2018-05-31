@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * @author Kasra Faghihi
  */
 @Retention(RetentionPolicy.RUNTIME) // Leave it at runtime, incase you want to check at runtime if the method is watched
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface Watch {
     
 }
