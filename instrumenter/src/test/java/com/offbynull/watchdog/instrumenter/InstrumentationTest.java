@@ -16,13 +16,23 @@
  */
 package com.offbynull.watchdog.instrumenter;
 
+import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType;
+import com.offbynull.watchdog.instrumenter.testhelpers.TestUtils;
+import com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.JarEntry;
+import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.createJar;
+import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.getClasspath;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.loadClassesInZipResourceAndInstrument;
+import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipFromResource;
 import com.offbynull.watchdog.user.WatchdogException;
 import com.offbynull.watchdog.user.WatchdogLauncher;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 import static org.apache.commons.lang3.reflect.ConstructorUtils.invokeConstructor;
 import static org.apache.commons.lang3.reflect.MethodUtils.invokeExactStaticMethod;
+import static org.junit.Assert.assertArrayEquals;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -90,6 +100,31 @@ public final class InstrumentationTest {
                 invokeStaticMethod(cls, "test", wd);
             });
         }
+    }
+    
+    @Test
+    public void mustNotDoubleInstrument() throws Exception {
+        // Load class
+        byte[] classContent = readZipFromResource("LookupSwitchTest.zip").get("LookupSwitchTest.class");
+        
+        // Create JAR out of class so it can be found by the instrumenter
+        List<TestUtils.JarEntry> originalJarEntries = new ArrayList<>();
+        originalJarEntries.add(new JarEntry("LookupSwitchTest.class", classContent));
+        File originalJarFile = createJar(originalJarEntries.toArray(new JarEntry[0]));
+        
+        // Get current classpath (core JVM classes) and add to it the newly created JAR
+        List<File> classpath = getClasspath();
+        classpath.addAll(classpath);
+        classpath.add(originalJarFile);
+
+        // Create the instrumenter and try to double instrument
+        Instrumenter instrumenter = new Instrumenter(classpath);
+        InstrumentationSettings settings = new InstrumentationSettings(MarkerType.CONSTANT);
+        
+        byte[] classInstrumented1stPass = instrumenter.instrument(classContent, settings).getInstrumentedClass();
+        byte[] classInstrumented2stPass = instrumenter.instrument(classInstrumented1stPass, settings).getInstrumentedClass();
+        
+        assertArrayEquals(classInstrumented1stPass, classInstrumented2stPass);
     }
     
     private <T> T createObject(Class<T> cls, Object... args) {
