@@ -37,6 +37,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -124,6 +125,8 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                     String name = fieldInsnNode.name;
                     if (WATCHDOG_TYPE.getInternalName().equals(owner) && PLACEHOLDER_FIELD.getName().equals(name)) {
                         InsnList replaceInsnList = loadVar(watchdogVar);
+
+                        AbstractInsnNode replaceLastInsnNode = replaceInsnList.getLast();
                         
                         insnList.insertBefore(insnNode, replaceInsnList);
                         insnList.remove(insnNode);
@@ -131,7 +134,7 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                         // update insnNode to last instruction of replacement list -- so when insnNode.getNext() is called below it will
                         // move to the next instruction to the method (it does this because we've already shoved these isntructions into
                         // the instructions for the method above -- the call to insertBefore)
-                        insnNode = replaceInsnList.getLast();
+                        insnNode = replaceLastInsnNode;
                     }
                 }
                 

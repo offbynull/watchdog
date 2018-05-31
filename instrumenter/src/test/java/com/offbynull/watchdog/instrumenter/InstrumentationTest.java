@@ -139,9 +139,21 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentViaClassAnnotation() throws Exception {
+    public void mustInstrumentRecursiveViaClassAnnotation() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveClassAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveClassAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(10L, (wd) -> {
+                createObject(cls);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentRecursiveViaMixOfAnnotationAndArgument() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixTest");
             
             expectedException.expect(WatchdogException.class);
             WatchdogLauncher.launch(10L, (wd) -> {
