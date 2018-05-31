@@ -22,11 +22,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Methods with this annotation are marked for instrumentation. Marks a method for instrumentation such that
+ * Classes and methods with this annotation are marked for instrumentation.
  * @author Kasra Faghihi
  */
-@Retention(RetentionPolicy.RUNTIME) // Leave it at runtime, incase you want to check at runtime if the method is watched
-@Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
+@Retention(RetentionPolicy.RUNTIME) // Leave it at runtime, incase you want to check at runtime if the method/class is watched
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR})
 public @interface Watch {
     
 }

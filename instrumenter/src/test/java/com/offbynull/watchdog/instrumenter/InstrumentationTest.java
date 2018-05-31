@@ -139,6 +139,18 @@ public final class InstrumentationTest {
     }
 
     @Test
+    public void mustInstrumentViaClassAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveClassAnnotationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveClassAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(10L, (wd) -> {
+                createObject(cls);
+            });
+        }
+    }
+
+    @Test
     public void mustInstrumentProperlyOnBothWatchdogArgAndWatchAnnotation() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("DoubleInstrumentationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("DoubleInstrumentationTest");

@@ -54,6 +54,9 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
     @Override
     public void pass(ClassNode classNode, InstrumentationState state) {
         Collection<MethodNode> methodNodes = classNode.methods;
+        
+        boolean classAnnotated = classNode.visibleAnnotations != null
+                && classNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
 
         for (MethodNode methodNode : methodNodes) {
             // Skip methods without implementation (abstract/interface/etc..)
@@ -71,9 +74,10 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
             // again by one of the other passes.
             state.getSkipMethods().add(methodDesc);
             
-            // Skip if method isn't annoted for instrumentation
-            if (methodNode.visibleAnnotations != null
-                    && methodNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE))) {
+            // Skip if method or class isn't annotated for instrumentation
+            boolean methodAnnotated = methodNode.visibleAnnotations != null
+                    && methodNode.visibleAnnotations.stream().noneMatch(a -> Type.getType(a.desc).equals(WATCH_TYPE));
+            if (methodAnnotated || classAnnotated) {
                 continue;
             }
 
