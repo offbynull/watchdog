@@ -43,7 +43,7 @@ public final class InstrumentationTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void mustInstrumentBranches() throws Exception {
+    public void mustInstrumentBranchesViaArgument() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
             
@@ -55,7 +55,19 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentLookupSwitch() throws Exception {
+    public void mustInstrumentBranchesViaAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopAnnotationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(100L, (wd) -> {
+                createObject(cls);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentLookupSwitchViaArgument() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
             
@@ -67,7 +79,19 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentTableSwitch() throws Exception {
+    public void mustInstrumentLookupSwitchViaAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchAnnotationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(100L, (wd) -> {
+                createObject(cls);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentTableSwitchViaArgument() throws Exception {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
@@ -79,13 +103,37 @@ public final class InstrumentationTest {
     }
 
     @Test
-    public void mustInstrumentRecursive() throws Exception { // entry point of methods must get a check -- this is what this test does
+    public void mustInstrumentTableSwitchViaAnnotation() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchAnnotationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(100L, (wd) -> {
+                createObject(cls);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentRecursiveViaArgument() throws Exception { // entrypoint of methods must get a check - this is what test does
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
             expectedException.expect(WatchdogException.class);
             WatchdogLauncher.launch(10L, (wd) -> {
                 createObject(cls, wd);
+            });
+        }
+    }
+
+    @Test
+    public void mustInstrumentRecursiveViaAnnotation() throws Exception { // entrypoint of methods must get a check - this is what test does
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveAnnotationTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveAnnotationTest");
+            
+            expectedException.expect(WatchdogException.class);
+            WatchdogLauncher.launch(10L, (wd) -> {
+                createObject(cls);
             });
         }
     }

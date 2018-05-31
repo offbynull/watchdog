@@ -16,7 +16,6 @@
  */
 package com.offbynull.watchdog.instrumenter;
 
-import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethodsWithParameter;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
 import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType;
@@ -54,7 +53,7 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
 
     @Override
     public void pass(ClassNode classNode, InstrumentationState state) {
-        Collection<MethodNode> methodNodes = findMethodsWithParameter(classNode.methods, WATCHDOG_TYPE);
+        Collection<MethodNode> methodNodes = classNode.methods;
 
         for (MethodNode methodNode : methodNodes) {
             // Skip methods without implementation (abstract/interface/etc..)
