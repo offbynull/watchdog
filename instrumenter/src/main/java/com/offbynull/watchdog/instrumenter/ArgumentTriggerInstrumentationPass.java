@@ -50,7 +50,8 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
     private static final Type WATCHDOG_TYPE = Type.getType(Watchdog.class);
     
     private static final Method GET_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "get");
-    private static final Method CHECK_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "check");
+    private static final Method PRE_BRANCH_INSTRUCTION_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "preBranchInstruction");
+    private static final Method POST_METHOD_ENTRY_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "postMethodEntry");
     private static final Field PLACEHOLDER_FIELD = FieldUtils.getDeclaredField(Watchdog.class, "PLACEHOLDER");
 
     @Override
@@ -104,7 +105,7 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
                                     )
                             ),
                             debugMarker(markerType, "Checking watchdog1"),
-                            call(CHECK_METHOD, loadVar(watchdogArgVar))
+                            call(POST_METHOD_ENTRY_METHOD, loadVar(watchdogArgVar))
                     );
             AbstractInsnNode lastPreambleInsnNode = preambleInsnList.getLast();
             insnList.insert(preambleInsnList);
@@ -118,7 +119,7 @@ final class ArgumentTriggerInstrumentationPass implements InstrumentationPass {
                         || insnNode instanceof TableSwitchInsnNode) {
                     InsnList trackInsnList = merge(
                             debugMarker(markerType, "Checking watchdog2"),
-                            call(CHECK_METHOD, loadVar(watchdogArgVar))
+                            call(PRE_BRANCH_INSTRUCTION_METHOD, loadVar(watchdogArgVar))
                     );
                     insnList.insertBefore(insnNode, trackInsnList);
                 }

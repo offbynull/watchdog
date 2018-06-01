@@ -48,7 +48,8 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
     private static final Type WATCH_TYPE = Type.getType(Watch.class);
     
     private static final Method GET_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "get");
-    private static final Method CHECK_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "check");
+    private static final Method PRE_BRANCH_INSTRUCTION_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "preBranchInstruction");
+    private static final Method POST_METHOD_ENTRY_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "postMethodEntry");
     private static final Field PLACEHOLDER_FIELD = FieldUtils.getDeclaredField(Watchdog.class, "PLACEHOLDER");
 
     @Override
@@ -99,7 +100,7 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                             call(GET_METHOD),
                             saveVar(watchdogVar),
                             debugMarker(markerType, "Checking watchdog"),
-                            call(CHECK_METHOD, loadVar(watchdogVar))
+                            call(POST_METHOD_ENTRY_METHOD, loadVar(watchdogVar))
                     );
             AbstractInsnNode lastPreambleInsnNode = preambleInsnList.getLast();
             insnList.insert(preambleInsnList);
@@ -113,7 +114,7 @@ final class ThreadLocalTriggerInstrumentationPass implements InstrumentationPass
                         || insnNode instanceof TableSwitchInsnNode) {
                     InsnList trackInsnList = merge(
                             debugMarker(markerType, "Checking watchdog"),
-                            call(CHECK_METHOD, loadVar(watchdogVar))
+                            call(PRE_BRANCH_INSTRUCTION_METHOD, loadVar(watchdogVar))
                     );
                     insnList.insertBefore(insnNode, trackInsnList);
                 }

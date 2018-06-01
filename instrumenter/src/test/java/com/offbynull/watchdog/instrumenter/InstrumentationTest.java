@@ -23,7 +23,7 @@ import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.createJa
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.getClasspath;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.loadClassesInZipResourceAndInstrument;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipFromResource;
-import com.offbynull.watchdog.user.WatchdogException;
+import com.offbynull.watchdog.user.CodeInterruptedException;
 import com.offbynull.watchdog.user.WatchdogLauncher;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -47,9 +47,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls, wd);
+                return null;
             });
         }
     }
@@ -59,9 +60,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopAnnotationTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -71,9 +73,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls, wd);
+                return null;
             });
         }
     }
@@ -83,9 +86,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchAnnotationTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -95,9 +99,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls, wd);
+                return null;
             });
         }
     }
@@ -107,9 +112,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchAnnotationTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(100L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(100L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -119,9 +125,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(10L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(10L, true, false, (wd) -> {
                 createObject(cls, wd);
+                return null;
             });
         }
     }
@@ -131,9 +138,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveAnnotationTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(10L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(10L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -143,9 +151,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveClassAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveClassAnnotationTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(10L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(10L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -155,9 +164,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(10L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(10L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }
@@ -167,9 +177,10 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixSameMethodTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixSameMethodTest");
             
-            expectedException.expect(WatchdogException.class);
-            WatchdogLauncher.launch(0L, (wd) -> {
+            expectedException.expect(CodeInterruptedException.class);
+            WatchdogLauncher.watch(0L, true, false, (wd) -> {
                 createObject(cls);
+                return null;
             });
         }
     }

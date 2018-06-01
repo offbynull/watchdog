@@ -17,24 +17,12 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Watchdog exception.
+ * Listens for method entry points.
  * @author Kasra Faghihi
  */
-public final class WatchdogException extends RuntimeException {
-    static final long serialVersionUID = 0L;
-
+public interface PostMethodEntryListener {
     /**
-     * Constructs a {@link WatchdogException} object.
+     * Code just entered a method. <b>Implementations must complete quickly and must not block</b>.
      */
-    public WatchdogException() {
-    }
-
-    /**
-     * Constructs a {@link WatchdogException} object with a message.
-     * @param message message
-     */
-    public WatchdogException(String message) {
-        super(message);
-    }
-    
+    void postMethodEntry();
 }

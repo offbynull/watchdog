@@ -28,31 +28,42 @@ public final class Watchdog {
      * Watchdog placeholder. If you don't have a {@link Watchdog} object available for passing down the invocation chain, you can use this
      * placeholder instead.
      */
-    public static final Watchdog PLACEHOLDER = new Watchdog(null); // Don't set this to null, because we want this field to be
-                                                                   // actually referenced by the bytecode in other classes. If we
-                                                                   // set this to null, the compiler will try to optimize by
-                                                                   // loading NULL directly onto the operand stack instead of
-                                                                   // actually loading the field.
+    public static final Watchdog PLACEHOLDER = new Watchdog();           // Don't set this to null, because we want this field to be
+                                                                         // actually referenced by the bytecode in other classes. If we
+                                                                         // set this to null, the compiler will try to optimize by
+                                                                         // loading NULL directly onto the operand stack instead of
+                                                                         // actually loading the field.
 
-    private volatile boolean triggered = false;     // Indicates if the watchdog hit / maximum time has elapsed
-    private final WatchdogListener listener;        // Listener to invoke when the timer hits
+    private final PreBranchListener preBranchListener;
+    private final PostMethodEntryListener postMethodEntryListener;
     
     private Watchdog() {
-        listener = null;
+        preBranchListener = null;
+        postMethodEntryListener = null;
     }
     
-    Watchdog(WatchdogListener listener) {
-        this.listener = listener;
+    Watchdog(PreBranchListener preBranchListener, PostMethodEntryListener postMethodEntryListener) {
+        if (preBranchListener == null || postMethodEntryListener == null) {
+            throw new NullPointerException();
+        }
+
+        this.preBranchListener = preBranchListener;
+        this.postMethodEntryListener = postMethodEntryListener;
         TLS.set(this);
     }
     
     /**
      * Do not use -- for internal use only.
      */
-    public void check() { // Check to see if watchdog flag was triggered
-        if (triggered) {
-            listener.triggered();
-        }
+    public void preBranchInstruction() {
+        preBranchListener.preBranchInstruction();
+    }
+
+    /**
+     * Do not use -- for internal use only.
+     */
+    public void postMethodEntry() {
+        postMethodEntryListener.postMethodEntry();
     }
     
     /**
@@ -67,12 +78,6 @@ public final class Watchdog {
             throw new IllegalStateException("Bad state -- watchdog does not exist in TLS");
         }
         return ret;
-    }
-    
-    // Maximum time has been triggered -- the next call to check should cause an exception
-    void hit() {
-        triggered = true;
-        listener.triggered();
     }
     
     // This object is finished with and must not be used again after this is invoked
