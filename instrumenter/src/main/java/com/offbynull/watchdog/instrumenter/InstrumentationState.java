@@ -18,10 +18,9 @@ package com.offbynull.watchdog.instrumenter;
 
 import com.offbynull.watchdog.instrumenter.asm.ClassInformationRepository;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang3.Validate;
+import org.objectweb.asm.tree.MethodNode;
 
 final class InstrumentationState {
     private final InstrumentationSettings instrumentationSettings;
@@ -29,7 +28,7 @@ final class InstrumentationState {
     
     private final Map<String, byte[]> extraFiles;
 
-    private final Set<MethodDescription> skipMethods; // methods to skip for this class
+    private final Map<MethodNode, MethodProperties> identifiedMethods;
     
     private ControlFlag controlFlag;
 
@@ -43,7 +42,7 @@ final class InstrumentationState {
         
         this.controlFlag = ControlFlag.CONTINUE_INSTRUMENT;
         
-        this.skipMethods = new HashSet<>();
+        this.identifiedMethods = new HashMap<>();
     }
 
     InstrumentationSettings instrumentationSettings() {
@@ -58,8 +57,8 @@ final class InstrumentationState {
         return extraFiles;
     }
 
-    public Set<MethodDescription> getSkipMethods() {
-        return skipMethods;
+    public Map<MethodNode, MethodProperties> identifiedMethods() {
+        return identifiedMethods;
     }
 
     void control(ControlFlag control) {

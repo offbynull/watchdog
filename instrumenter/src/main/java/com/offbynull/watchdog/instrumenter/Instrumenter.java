@@ -96,10 +96,19 @@ public final class Instrumenter {
 
 
         // Apply passes.
+          // IMPORTANT NOTE: The order of passes is important here...
+          //                    1. ReplacePlaceholder MUST BE BEFORE EntryPoint pass, because EntryPoint will add code to load up the
+          //                       placeholder to do a comparison check. ReplacePlaceholder will end up replacing the load that EntryPoint
+          //                       adds.
+          //                    2. BranchPoint MUST BE BEFORE EntryPoint pass, because EntryPoint will add a branching operation when it
+          //                       checks the for the watchdog placeholder. BranchPoint will end up instrumenting around the branching
+          //                       operation that EntryPoint adds.
         InstrumentationPass[] passes = new InstrumentationPass[] {
             new CheckMarkerInstrumentationPass(),        // check already instrumented marker
-            new ArgumentTriggerInstrumentationPass(),    // instrument methods that take in WatchDog arg
-            new ThreadLocalTriggerInstrumentationPass(), // instrument methods that get WatchDog from threadlocal storage
+            new AnalyzeInstrumentationPass(),            // analyze methods
+            new ReplacePlaceholderInstrumentationPass(), // instrument method so that placeholders are replaced
+            new BranchPointInstrumentationPass(),        // instrument method branch points
+            new EntryPointInstrumentationPass(),         // instrument method entry point (must be last)
             new SetMarkerInstrumentationPass(),          // set already instrumented marker
         };
         InstrumentationState passState = new InstrumentationState(settings, classRepo);
