@@ -34,36 +34,49 @@ public final class Watchdog {
                                                                          // loading NULL directly onto the operand stack instead of
                                                                          // actually loading the field.
 
-    private final PreBranchListener preBranchListener;
-    private final PostMethodEntryListener postMethodEntryListener;
+    private final BranchListener branchListener;
+    private final InstantiateListener instantiateListener;
+    private final MethodEntryListener methodEntryListener;
     
     private Watchdog() {
-        preBranchListener = null;
-        postMethodEntryListener = null;
+        branchListener = null;
+        instantiateListener = null;
+        methodEntryListener = null;
     }
     
-    Watchdog(PreBranchListener preBranchListener, PostMethodEntryListener postMethodEntryListener) {
-        if (preBranchListener == null || postMethodEntryListener == null) {
+    Watchdog(BranchListener branchListener, InstantiateListener instantiateListener, MethodEntryListener methodEntryListener) {
+        if (branchListener == null || instantiateListener == null || methodEntryListener == null) {
             throw new NullPointerException();
         }
 
-        this.preBranchListener = preBranchListener;
-        this.postMethodEntryListener = postMethodEntryListener;
+        this.branchListener = branchListener;
+        this.instantiateListener = instantiateListener;
+        this.methodEntryListener = methodEntryListener;
         TLS.set(this);
     }
-    
+
+
     /**
      * Do not use -- for internal use only.
      */
-    public void preBranchInstruction() {
-        preBranchListener.preBranchInstruction();
+    public void onBranch() {
+        branchListener.onBranch();
+    }
+
+
+    /**
+     * Do not use -- for internal use only.
+     * @param obj n/a
+     */
+    public void onInstantiate(Object obj) {
+        instantiateListener.onInstantiate(obj);
     }
 
     /**
      * Do not use -- for internal use only.
      */
-    public void postMethodEntry() {
-        postMethodEntryListener.postMethodEntry();
+    public void onMethodEntry() {
+        methodEntryListener.onMethodEntry();
     }
     
     /**

@@ -20,7 +20,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-final class KillDurationListener implements PreBranchListener, PostMethodEntryListener {
+final class KillDurationListener implements BranchListener, MethodEntryListener {
     
     private static final ScheduledThreadPoolExecutor TIMER;
     
@@ -63,12 +63,12 @@ final class KillDurationListener implements PreBranchListener, PostMethodEntryLi
     }
 
     @Override
-    public void preBranchInstruction() {
+    public void onBranch() {
         hitCheck();
     }
 
     @Override
-    public void postMethodEntry() {
+    public void onMethodEntry() {
         hitCheck();
     }
     

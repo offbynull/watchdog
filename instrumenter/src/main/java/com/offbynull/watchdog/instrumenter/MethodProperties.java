@@ -33,15 +33,15 @@ final class MethodProperties {
         this.argMode = argMode;
     }
 
-    public VariableTable getVariableTable() {
+    public VariableTable variableTable() {
         return variableTable;
     }
 
-    public Variable getWatchdogVariable() {
+    public Variable watchdogVariable() {
         return watchdogVariable;
     }
 
-    public boolean isArgMode() {
+    public boolean argMode() {
         return argMode;
     }
     

@@ -38,7 +38,7 @@ import org.objectweb.asm.tree.MethodNode;
 final class EntryPointInstrumentationPass implements InstrumentationPass {
     
     private static final Method GET_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "get");
-    private static final Method POST_METHOD_ENTRY_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "postMethodEntry");
+    private static final Method ON_METHOD_ENTRY_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "onMethodEntry");
     private static final Field PLACEHOLDER_FIELD = FieldUtils.getDeclaredField(Watchdog.class, "PLACEHOLDER");
 
     @Override
@@ -47,8 +47,8 @@ final class EntryPointInstrumentationPass implements InstrumentationPass {
             MethodNode methodNode = entry.getKey();
             MethodProperties methodProperties = entry.getValue();
             
-            boolean argMode = methodProperties.isArgMode();
-            Variable watchdogVar = methodProperties.getWatchdogVariable();
+            boolean argMode = methodProperties.argMode();
+            Variable watchdogVar = methodProperties.watchdogVariable();
             
             MarkerType markerType = state.instrumentationSettings().getMarkerType();
             InsnList preambleInsnList;
@@ -63,8 +63,8 @@ final class EntryPointInstrumentationPass implements InstrumentationPass {
                                                 saveVar(watchdogVar)
                                         )
                                 ),
-                                debugMarker(markerType, "Checking watchdog"),
-                                call(POST_METHOD_ENTRY_METHOD, loadVar(watchdogVar))
+                                debugMarker(markerType, "Invoking watchdog method entry tracker"),
+                                call(ON_METHOD_ENTRY_METHOD, loadVar(watchdogVar))
                         );                
             } else {
                 preambleInsnList =
@@ -72,8 +72,8 @@ final class EntryPointInstrumentationPass implements InstrumentationPass {
                                 debugMarker(markerType, "Get watchdog from TLS"),
                                 call(GET_METHOD),
                                 saveVar(watchdogVar),
-                                debugMarker(markerType, "Checking watchdog"),
-                                call(POST_METHOD_ENTRY_METHOD, loadVar(watchdogVar))
+                                debugMarker(markerType, "Invoking watchdog method entry tracker"),
+                                call(ON_METHOD_ENTRY_METHOD, loadVar(watchdogVar))
                         );
             }
             

@@ -96,7 +96,7 @@ public final class InstrumentationTest {
 
     @Test
     public void mustInstrumentTableSwitchViaArgument() throws Exception {
-        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip")) {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip", new InstrumentationSettings(MarkerType.NONE))) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
             expectedException.expect(CodeInterruptedException.class);

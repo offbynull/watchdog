@@ -45,7 +45,7 @@ final class ReplacePlaceholderInstrumentationPass implements InstrumentationPass
             MethodNode methodNode = entry.getKey();
             MethodProperties methodProperties = entry.getValue();
 
-            Variable watchdogVar = methodProperties.getWatchdogVariable();
+            Variable watchdogVar = methodProperties.watchdogVariable();
             
             MarkerType markerType = state.instrumentationSettings().getMarkerType();
             InsnList insnList = methodNode.instructions;

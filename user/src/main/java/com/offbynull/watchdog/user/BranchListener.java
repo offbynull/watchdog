@@ -17,12 +17,12 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Listens for method entry points.
+ * Listens for branch instructions. This includes all jump and switch instructions, but not try-catch blocks.
  * @author Kasra Faghihi
  */
-public interface PostMethodEntryListener {
+public interface BranchListener {
     /**
-     * Code just entered a method. <b>Implementations must complete quickly and must not block</b>.
+     * Code is about to walk over a branch instruction.
      */
-    void postMethodEntry();
+    void onBranch();
 }

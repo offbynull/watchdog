@@ -28,26 +28,28 @@ public final class WatchdogLauncher {
     }
 
     /**
-     * Run and watch a piece of instrumented code.
-     * @param preBranchListener listener to invoke on branch instructions
-     * @param postMethodEntryListener listener to invoke on method entrypoints
+     * Run and monitor instrumented code.
+     * @param branchListener listener to invoke on branch instructions
+     * @param instantiateListener listener to invoke on object instantiation instructions
+     * @param methodEntryListener listener to invoke on method entrypoints
      * @param callable callable to execute
      * @param <V> the result type of {@code callable}
      * @return {@code callable}'s result
      * @throws NullPointerException if any argument is {@code null}
      * @throws Exception {@code callable}'s exception
      */
-    public static <V> V watch(
-            PreBranchListener preBranchListener,
-            PostMethodEntryListener postMethodEntryListener,
+    public static <V> V monitor(
+            BranchListener branchListener,
+            InstantiateListener instantiateListener,
+            MethodEntryListener methodEntryListener,
             WatchdogCallable<V> callable) throws Exception {
-        if (preBranchListener == null || postMethodEntryListener == null || callable == null) {
+        if (branchListener == null || instantiateListener == null || methodEntryListener == null || callable == null) {
             throw new NullPointerException();
         }
 
         Watchdog watchdog = null;
         try {
-            watchdog = new Watchdog(preBranchListener, postMethodEntryListener);
+            watchdog = new Watchdog(branchListener, instantiateListener, methodEntryListener);
             return callable.call(watchdog);
         } finally {
             if (watchdog != null) {
@@ -57,13 +59,13 @@ public final class WatchdogLauncher {
     }
     
     /**
-     * Run and watch a piece of instrumented code such that it finishes within the specified duration. If the duration passes while the
-     * callable is...
+     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
+     * is...
      * <ul>
      * <li>waiting (e.g. blocked on IO, thread sync, etc..), the thread's {@link Thread#interrupt() } will be invoked.</li>
      * <li>running (e.g. in a hard loop), the thread will throw {@link CodeInterruptedException} (once in an instrumented method).</li>
      * </ul>
-     * Equivalent to calling {@code watch(delay, true, true, callable)}.
+     * Equivalent to calling {@code monitor(delay, true, true, callable)}.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param callable callable to execute
      * @param <V> the result type of {@code callable}
@@ -77,8 +79,8 @@ public final class WatchdogLauncher {
     }
 
     /**
-     * Run and watch a piece of instrumented code such that it finishes within the specified duration. If the duration passes while the
-     * callable is, the action depends on the {@code interruptCode} and {@code interruptBlocking} parameters.
+     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable is,
+     * the action depends on the {@code interruptCode} and {@code interruptBlocking} parameters.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param interruptCode if {@code true}, the thread's {@link Thread#interrupt() } will be invoked once the specified duration elapses
      * @param interruptBlocking if {@code true}, the thread will throw {@link CodeInterruptedException} (once in an instrumented method)
@@ -92,6 +94,7 @@ public final class WatchdogLauncher {
      */
     public static <V> V watch(long delay, boolean interruptCode, boolean interruptBlocking, WatchdogCallable<V> callable) throws Exception {
         KillDurationListener timeLimitListener = KillDurationListener.create(delay, interruptCode, interruptBlocking);
-        return watch(timeLimitListener, timeLimitListener, callable);
+        InstantiateListener instantiateListener = (obj) -> { };
+        return monitor(timeLimitListener, instantiateListener, timeLimitListener, callable);
     }
 }

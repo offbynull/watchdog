@@ -17,12 +17,14 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Listens for branch instructions. This includes all jump and switch instructions, but not try-catch blocks.
+ * Listens for object instantiation instructions.
  * @author Kasra Faghihi
  */
-public interface PreBranchListener {
+public interface InstantiateListener {
     /**
-     * Code is about to walk over a branch instruction. <b>Implementations must complete quickly and must not block</b>.
+     * Code is about to walk over a object instantiation instruction.
+     * @param obj newly created object
+     * @throws NullPointerException if any argument is {@code null}
      */
-    void preBranchInstruction();
+    void onInstantiate(Object obj);
 }

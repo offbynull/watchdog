@@ -101,15 +101,21 @@ public final class Instrumenter {
           //                       placeholder to do a comparison check. ReplacePlaceholder will end up replacing the load that EntryPoint
           //                       adds.
           //                    2. BranchPoint MUST BE BEFORE EntryPoint pass, because EntryPoint will add a branching operation when it
-          //                       checks the for the watchdog placeholder. BranchPoint will end up instrumenting around the branching
+          //                       checks for the watchdog placeholder. BranchPoint will end up instrumenting around the branching
           //                       operation that EntryPoint adds.
+          //                    3. BranchPoint MUST BE BEFORE ObjectInstantiation pass, because ObjectInstantiation will add a branching
+          //                       operation when it checks if INVOKESPECIAL is for the owning class (if it's calling its parent class's
+          //                       constructor). BranchPoint will end up instrumenting around the branching operation that
+          //                       ObjectInstantiation adds.
         InstrumentationPass[] passes = new InstrumentationPass[] {
-            new CheckMarkerInstrumentationPass(),        // check already instrumented marker
-            new AnalyzeInstrumentationPass(),            // analyze methods
-            new ReplacePlaceholderInstrumentationPass(), // instrument method so that placeholders are replaced
-            new BranchPointInstrumentationPass(),        // instrument method branch points
-            new EntryPointInstrumentationPass(),         // instrument method entry point (must be last)
-            new SetMarkerInstrumentationPass(),          // set already instrumented marker
+            new CheckMarkerInstrumentationPass(),         // check already instrumented marker
+            new AnalyzeInstrumentationPass(),             // analyze methods
+            new ReplacePlaceholderInstrumentationPass(),  // instrument method so that placeholders are replaced
+            new BranchPointInstrumentationPass(),         // instrument method branch points
+            new ArrayInstantiationInstrumentationPass(),  // instrument method array instantiation points
+            new ObjectInstantiationInstrumentationPass(), // instrument method object instantiation points
+            new EntryPointInstrumentationPass(),          // instrument method entry point (must be last)
+            new SetMarkerInstrumentationPass(),           // set already instrumented marker
         };
         InstrumentationState passState = new InstrumentationState(settings, classRepo);
 
@@ -174,7 +180,7 @@ public final class Instrumenter {
                 AbstractInsnNode insn = methodNode.instructions.getFirst();
                 while (insn != null) {
                     if (insn == e.node) {
-                        printer.getText().add("----------------- BAD INSTRUCTION HERE -----------------\n");
+                        printer.getText().add("----------------- BAD INSTRUCTION BELOW -----------------\n");
                     }
                     insn.accept(traceMethodVisitor);
                     insn = insn.getNext();
