@@ -54,14 +54,13 @@ import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.p
 
 public class SimpleVerifierTest {
 
-    private FileSystemClassInformationRepository classRepo;
+    private ClassResourceClassInformationRepository classRepo;
     private ClassNode classNode;
     private MethodNode methodNode;
 
     @Before
     public void setUp() throws IOException {
-        classRepo = new FileSystemClassInformationRepository();
-        classRepo.addClasspath(TestUtils.getClasspath());
+        classRepo = new ClassResourceClassInformationRepository(TestUtils.class.getClassLoader());
 
         byte[] classData = readZipFromResource("SimpleStub.zip").get("SimpleStub.class");
 

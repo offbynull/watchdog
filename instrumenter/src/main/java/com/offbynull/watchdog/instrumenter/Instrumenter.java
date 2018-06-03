@@ -18,6 +18,8 @@ package com.offbynull.watchdog.instrumenter;
 
 import com.offbynull.watchdog.instrumenter.InstrumentationState.ControlFlag;
 import com.offbynull.watchdog.instrumenter.asm.ClassInformationRepository;
+import com.offbynull.watchdog.instrumenter.asm.ClassResourceClassInformationRepository;
+import com.offbynull.watchdog.instrumenter.asm.CompositeClassInformationRepository;
 import com.offbynull.watchdog.instrumenter.asm.FileSystemClassInformationRepository;
 import com.offbynull.watchdog.instrumenter.asm.SimpleClassWriter;
 import com.offbynull.watchdog.instrumenter.asm.SimpleClassNode;
@@ -59,7 +61,10 @@ public final class Instrumenter {
         Validate.notNull(classpath);
         Validate.noNullElements(classpath);
 
-        classRepo = FileSystemClassInformationRepository.create(classpath);
+        classRepo = new CompositeClassInformationRepository(
+                new ClassResourceClassInformationRepository(Instrumenter.class.getClassLoader()), // access to core JRE classes
+                FileSystemClassInformationRepository.create(classpath)                            // access to user classes
+        );
     }
 
     /**

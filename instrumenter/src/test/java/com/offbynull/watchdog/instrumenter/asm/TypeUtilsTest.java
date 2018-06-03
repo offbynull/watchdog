@@ -1,6 +1,5 @@
 package com.offbynull.watchdog.instrumenter.asm;
 
-import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.getClasspath;
 import java.io.Serializable;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -10,11 +9,11 @@ import org.objectweb.asm.Type;
 
 public class TypeUtilsTest {
     
-    private static FileSystemClassInformationRepository repo;
+    private static ClassResourceClassInformationRepository repo;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        repo = FileSystemClassInformationRepository.create(getClasspath());
+        repo = new ClassResourceClassInformationRepository(TypeUtilsTest.class.getClassLoader());
     }
     
     @AfterClass

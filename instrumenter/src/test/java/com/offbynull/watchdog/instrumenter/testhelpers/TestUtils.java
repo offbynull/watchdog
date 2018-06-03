@@ -18,6 +18,8 @@ package com.offbynull.watchdog.instrumenter.testhelpers;
 
 import com.offbynull.watchdog.instrumenter.InstrumentationSettings;
 import com.offbynull.watchdog.instrumenter.Instrumenter;
+import com.offbynull.watchdog.instrumenter.asm.ClassResourceClassInformationRepository;
+import com.offbynull.watchdog.instrumenter.asm.CompositeClassInformationRepository;
 import com.offbynull.watchdog.instrumenter.asm.FileSystemClassInformationRepository;
 import com.offbynull.watchdog.instrumenter.asm.SimpleClassNode;
 import com.offbynull.watchdog.instrumenter.asm.SimpleClassWriter;
@@ -112,8 +114,8 @@ public final class TestUtils {
         }
         File originalJarFile = createJar(originalJarEntries.toArray(new JarEntry[0]));
         
-        // Get classpath used to run this Java process and addIndividual the jar file we created to it (used by the instrumenter)
-        List<File> classpath = getClasspath();
+        // Add the jar file we created to list of classpaths (used by the instrumenter)
+        List<File> classpath = new ArrayList<>();
         classpath.add(originalJarFile);
         
         // Instrument classes and write out new jar
@@ -173,8 +175,12 @@ public final class TestUtils {
         Validate.notNull(classNodes);
         Validate.noNullElements(classNodes);
         
-        FileSystemClassInformationRepository infoRepo = FileSystemClassInformationRepository.create(getClasspath());
-        SimpleClassWriter cw = new SimpleClassWriter(SimpleClassWriter.COMPUTE_MAXS | SimpleClassWriter.COMPUTE_FRAMES, infoRepo);
+        CompositeClassInformationRepository infoRepo = new CompositeClassInformationRepository(
+                new ClassResourceClassInformationRepository(TestUtils.class.getClassLoader()),
+                FileSystemClassInformationRepository.create(getClasspath())
+        );
+
+        SimpleClassWriter cw = new SimpleClassWriter(SimpleClassWriter.COMPUTE_MAXS | SimpleClassWriter.COMPUTE_FRAMES,infoRepo);
         
         JarEntry[] jarEntries = new JarEntry[classNodes.length];
         for (int i = 0; i < jarEntries.length; i++) {
@@ -262,17 +268,18 @@ public final class TestUtils {
                 .filter(x -> x.exists())
                 .collect(Collectors.toList());
 
-        String bootClasspath = System.getProperty("sun.boot.class.path");
-        Validate.validState(bootClasspath != null);
-        List<File> bootClassPathFiles = Arrays
-                .stream(bootClasspath.split(Pattern.quote(pathSeparator)))
-                .map(x -> new File(x))
-                .filter(x -> x.exists())
-                .collect(Collectors.toList());
+        // Commented out block is no longer valid as of Java9+
+//        String bootClasspath = System.getProperty("sun.boot.class.path");
+//        Validate.validState(bootClasspath != null);
+//        List<File> bootClassPathFiles = Arrays
+//                .stream(bootClasspath.split(Pattern.quote(pathSeparator)))
+//                .map(x -> new File(x))
+//                .filter(x -> x.exists())
+//                .collect(Collectors.toList());
 
         ArrayList<File> ret = new ArrayList<>();
         ret.addAll(classPathFiles);
-        ret.addAll(bootClassPathFiles);
+//        ret.addAll(bootClassPathFiles);
         
         return ret;
     }
