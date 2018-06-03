@@ -47,10 +47,10 @@
         <module>build-tools</module>
         <module>user</module>
         <module>instrumenter</module>
-<!--        <module>maven-plugin</module>
+        <module>maven-plugin</module>
         <module>ant-plugin</module>
         <module>java-agent</module>
-        <module>gradle-plugin</module>-->
+        <module>gradle-plugin</module>
     </modules>
     <dependencyManagement>
         <dependencies>

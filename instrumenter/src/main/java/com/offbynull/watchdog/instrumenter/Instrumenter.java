@@ -144,7 +144,7 @@ public final class Instrumenter {
         //                                             we're doing bad things with the stack. So, before writing the class out and returning
         //                                             it, we call verifyClassIntegrity() to check and make sure everything is okay.
         // RE-ENABLE ONLY IF JVM COMPLAINS ABOUT INSTRUMENTED CLASSES AND YOU NEED TO DEBUG, KEEP COMMENTED OUT FOR PRODUCTION
-        verifyClassIntegrity(classNode);
+        //verifyClassIntegrity(classNode); // This doesn't really work anymore? It seems to error out when it shouldn't.
 
         ClassWriter cw = new SimpleClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, classRepo);
         classNode.accept(cw);
@@ -160,7 +160,7 @@ public final class Instrumenter {
         // Do not COMPUTE_FRAMES. If you COMPUTE_FRAMES and you pop too many items off the stack or do other weird things that mess up the
         // stack map frames, it'll crash on classNode.accept(cw).
             // As of ASM6.2 (maybe earlier as well), COMPUTE_MAXS does nothing without COMPUTE_FRAMES? This no longer applies?
-        ClassWriter cw = new SimpleClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, classRepo);
+        ClassWriter cw = new SimpleClassWriter(ClassWriter.COMPUTE_MAXS /*| ClassWriter.COMPUTE_FRAMES*/, classRepo);
         classNode.accept(cw);
         
         byte[] classData = cw.toByteArray();
