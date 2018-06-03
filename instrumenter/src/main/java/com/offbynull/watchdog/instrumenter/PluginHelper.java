@@ -74,7 +74,7 @@ public final class PluginHelper {
 
     /**
      * Instruments class files and generates detail files. Detail files are placed alongside destination class files -- they have the same
-     * name but the extension will be changed to {@code .coroutinesinfo}.
+     * name but the extension will be changed to {@code .watchdoginfo}.
      * @param instrumenter instrumenter
      * @param settings instrumentation settings
      * @param srcDstMapping class files to instrument mapped to destination files where the final instrumented results will be placed

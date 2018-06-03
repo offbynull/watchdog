@@ -78,7 +78,7 @@ public final class ClassResourceClassInformationRepository implements ClassInfor
     //To cope with that issue, you can load the classfile using classloader.getResources(), use ASM to find the supertypes and compute the
     //common super types.
     //
-    //But i suppose that you already know all of this, (you are the author of coroutines, right ?) so to answer to your question, no, ASM
+    //But i suppose that you already know all of this, (you are the author of watchdog, right ?) so to answer to your question, no, ASM
     //does not provide any code for dealing with that, you have to write your own.
     //
     //The other solution, which i think in your case is the right solution, is to not ask ASM to generate the stackmap for you, but read the
