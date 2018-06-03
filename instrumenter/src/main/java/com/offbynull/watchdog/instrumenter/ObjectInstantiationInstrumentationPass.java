@@ -60,10 +60,13 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
             
             AbstractInsnNode insnNode = insnList.getFirst();
             while (insnNode != null) {
-                // NOTE: It may seem like both arrays and objects can be handled by the code for arrays, but remember that creating a new
-                // object via NEW opcode doesn't invoke that objects constructor. If you try to make use of that object before the
-                // constructor (<init>) has been called, the JVM will crap out because on the operandstack it'll be marked as an
-                // uninitialized object.
+                // NOTE: Remember that creating a new object via NEW opcode doesn't invoke that objects constructor. If you try to make use
+                // of that object (even by passing it into another method) before the constructor (<init> method) has been called, the JVM
+                // will crap out because on the operandstack it'll be marked as an uninitialized object.
+                //
+                // The problem with this is that it is possible for an object to have <init> called more than once (javac never actually
+                // generates it but it is possible to have). We make the assumption that anytime <init> is called, it is considered as a new
+                // object. It is effectively instantiating an object -- the subsequent call to <init> is resetting its state.
 
                 if (insnNode instanceof MethodInsnNode
                         && insnNode.getOpcode() == Opcodes.INVOKESPECIAL
@@ -90,8 +93,11 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
 
 
 
-                    // Before the invoke special isntruction, duplicate the object pointer going into the INVOKESPECIAL. This requires
-                    // saving the args and loading them back onto the stack + doing 1 extra load to get a duplicate the object pointer.
+                    // This is an inefficient way to do this. The best way to do this is to do actual graph analysis of the instructions and
+                    // determine if you can target the exact instruction where that new object pointer for the invoke special is generated,
+                    // then dupe it. Right now we unload the args on the stack into variables, dupe the object pointer for the invoke, then
+                    // reload them back onto the stack. The problem is that graph analysis is complicated and error-prone, with many edge
+                    // cases.
                       // Save args for invoke special
                     InsnList saveInitArgsInsnList = new InsnList();
                     saveInitArgsInsnList.add(debugMarker(markerType, "Saving INVOKESPECIAL <init> args from stack onto LVT"));
@@ -113,19 +119,19 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
                         loadInitArgsInsnList.add(loadVar(vars[i]));
                     }
                     
-                    
-                    
-                    // After the invoke special instruction, the constructor (<init>) should have consumed all the original stack items. If
-                    // the invokespecial was not for the owning class, we'll have loaded up the args for Watchdog.onInstantiate(), so invoke
-                    // it.
+                      // Generate replacement instructions
                     LabelNode notForOwningObjectLabelNode = new LabelNode();
                     LabelNode endLabelNode = new LabelNode();
                     InsnList replaceInsnList = merge(
                             saveInitArgsInsnList,
                             pushWatchdogArgsInsnList,
                             loadInitArgsInsnList,
-                            new MethodInsnNode(Opcodes.INVOKESPECIAL, methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc, false),
-                            mergeIf(thisArg != null, () -> new Object[] { // perform for non-static method -- check performed
+                            new MethodInsnNode(Opcodes.INVOKESPECIAL,
+                                    methodInsnNode.owner,
+                                    methodInsnNode.name,
+                                    methodInsnNode.desc,
+                                    false),
+                            mergeIf(thisArg != null, () -> new Object[] {// perform for non-static method -- check performed
                                 debugMarker(markerType, "Checking if INVOKESPECIAL was for owning object"),
                                 new VarInsnNode(Opcodes.ALOAD, thisArg.getIndex()),
                                 new VarInsnNode(Opcodes.ALOAD, newObjVar.getIndex()),
@@ -139,7 +145,7 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
                                 new MethodInsnNode(Opcodes.INVOKEVIRTUAL, CLS_NAME, METHOD_NAME, METHOD_DESC, false),
                                 endLabelNode,
                             }),
-                            mergeIf(thisArg == null, () -> new Object[] { // perform for static method -- no check performed
+                            mergeIf(thisArg == null, () -> new Object[] {// perform for static method -- no check performed
                                 debugMarker(markerType, "Invoking watchdog instantiation tracker (object)"),
                                 new MethodInsnNode(Opcodes.INVOKEVIRTUAL, CLS_NAME, METHOD_NAME, METHOD_DESC, false)
                             })
