@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Kasra Faghihi, All rights reserved.
+ * Copyright (c) 2018, Kasra Faghihi, All rights reserved.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,7 +84,7 @@ public final class VariableTableTest {
         
         Variable var2 = fixture.acquireExtra(Type.BOOLEAN_TYPE);
         assertEquals(var2.getType(), Type.BOOLEAN_TYPE);
-        assertEquals(var2.getIndex(), 2);
+        assertEquals(var2.getIndex(), 3);
         assertTrue(var2.isUsed());
     }
 

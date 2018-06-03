@@ -26,6 +26,7 @@ import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.m
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.saveVar;
 import com.offbynull.watchdog.user.Watchdog;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.MethodUtils;
 import org.objectweb.asm.Opcodes;
@@ -58,6 +59,11 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
             MarkerType markerType = state.instrumentationSettings().getMarkerType();
             InsnList insnList = methodNode.instructions;
             
+            VariableTable varTable = methodProperties.variableTable();
+            Variable thisArg = (methodNode.access & Opcodes.ACC_STATIC) == 0 ? varTable.getArgument(0) : null;
+            
+            Map<Integer, Type> extraVars = new HashMap<>(); // all extra vars acquired by this method -- lvt index -> var type
+            
             AbstractInsnNode insnNode = insnList.getFirst();
             while (insnNode != null) {
                 // NOTE: Remember that creating a new object via NEW opcode doesn't invoke that objects constructor. If you try to make use
@@ -72,18 +78,14 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
                         && insnNode.getOpcode() == Opcodes.INVOKESPECIAL
                         && ((MethodInsnNode) insnNode).name.equals("<init>")) { // for object initialization
                     MethodInsnNode methodInsnNode = (MethodInsnNode) insnNode;
-                    
-                    
-                    
-                    // Init
-                    VariableTable varTable = methodProperties.variableTable();
 
                     Type methodOwner = Type.getObjectType(methodInsnNode.owner);
                     Type methodDesc = Type.getMethodType(methodInsnNode.desc);
                     Type[] methodParams = methodDesc.getArgumentTypes();
                     
-                    Variable thisArg = (methodNode.access & Opcodes.ACC_STATIC) == 0 ? varTable.getArgument(0) : null;
                     
+                    
+                    // Init
                     Variable[] vars = new Variable[methodParams.length];  // Acquire LVT slots
                     for (int i = methodParams.length - 1; i >= 0; i--) {
                         Type methodParam = methodParams[i];
@@ -171,6 +173,15 @@ final class ObjectInstantiationInstrumentationPass implements InstrumentationPas
                 // Move to next instruction
                 insnNode = insnNode.getNext();
             }
+            
+            // We don't want the extra variable slots we used to be reused by instrumentation passes down the line. We released them in the
+            // in the loop above because the extra vars can be reused by the same instrumentation pass (this pass). But, if they're used by
+            // other passes down the line, those passes may start touching areas of code added by this pass, meaning that the variable slots
+            // may be overwritten while the logic added by this pass still depends on it.
+            //
+            // Re-acquire all the extra variable slots we used and don't release them -- we don't want them being used by other passes down
+            // the line. 
+            extraVars.entrySet().forEach(e -> varTable.acquireExtra(e.getValue()));
         }
     }
 }

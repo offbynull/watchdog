@@ -159,7 +159,8 @@ public final class Instrumenter {
     private void verifyClassIntegrity(ClassNode classNode) {
         // Do not COMPUTE_FRAMES. If you COMPUTE_FRAMES and you pop too many items off the stack or do other weird things that mess up the
         // stack map frames, it'll crash on classNode.accept(cw).
-        ClassWriter cw = new SimpleClassWriter(ClassWriter.COMPUTE_MAXS/* | ClassWriter.COMPUTE_FRAMES*/, classRepo);
+            // As of ASM6.2 (maybe earlier as well), COMPUTE_MAXS does nothing without COMPUTE_FRAMES? This no longer applies?
+        ClassWriter cw = new SimpleClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES, classRepo);
         classNode.accept(cw);
         
         byte[] classData = cw.toByteArray();
@@ -177,7 +178,7 @@ public final class Instrumenter {
                 StringWriter writer = new StringWriter();
                 PrintWriter printWriter = new PrintWriter(writer);
                 
-                printWriter.append(methodNode.name + " encountered " + e);
+                printWriter.append(methodNode.name + " encountered " + e + "\n");
                 
                 Printer printer = new Textifier();
                 TraceMethodVisitor traceMethodVisitor = new TraceMethodVisitor(printer);
