@@ -67,6 +67,34 @@ public final class WatchdogLauncher {
      * </ul>
      * Equivalent to calling {@code monitor(delay, true, true, callable)}.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
+     * @param runnable runnable to execute
+     * @throws NullPointerException if any argument is {@code null}
+     * @throws IllegalArgumentException if {@code delay} is negative
+     * @throws RuntimeException {@code runnable}'s exception
+     */
+    public static void watch(long delay, WatchdogRunnable runnable) {
+        try {
+            WatchdogCallable<Object> callable = (Watchdog wd) -> {
+                runnable.run(wd);
+                return null;
+            };
+            watch(delay, callable);
+        } catch (RuntimeException re) {
+            throw re;
+        } catch (Exception e) {
+            throw new IllegalStateException(); // should never happen
+        }
+    }
+
+    /**
+     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
+     * is...
+     * <ul>
+     * <li>waiting (e.g. blocked on IO, thread sync, etc..), the thread's {@link Thread#interrupt() } will be invoked.</li>
+     * <li>running (e.g. in a hard loop), the thread will throw {@link CodeInterruptedException} (once in an instrumented method).</li>
+     * </ul>
+     * Equivalent to calling {@code monitor(delay, true, true, callable)}.
+     * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param callable callable to execute
      * @param <V> the result type of {@code callable}
      * @return callable result
