@@ -1,6 +1,5 @@
 package com.offbynull.watchdog.mavenplugin;
 
-import com.offbynull.watchdog.mavenplugin.TestInstrumentMojo;
 import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType;
 import java.io.File;
 import java.io.IOException;
@@ -19,9 +18,9 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.maven.model.Build;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public final class TestInstrumentMojoTest {
@@ -30,7 +29,7 @@ public final class TestInstrumentMojoTest {
     
     private TestInstrumentMojo fixture;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         fixture = new TestInstrumentMojo();
         
@@ -66,7 +65,7 @@ public final class TestInstrumentMojoTest {
             byte[] modifiedTestClassContent = FileUtils.readFileToByteArray(testClass);
             
             // test
-            Assert.assertTrue(modifiedTestClassContent.length > classContent.length);
+            assertTrue(modifiedTestClassContent.length > classContent.length);
         } finally {
             if (testDir != null) {
                 FileUtils.deleteDirectory(testDir);

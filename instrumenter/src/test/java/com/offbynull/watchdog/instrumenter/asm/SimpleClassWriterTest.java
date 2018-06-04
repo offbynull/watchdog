@@ -36,8 +36,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.junit.Before;
-import org.junit.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -48,13 +46,15 @@ import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.r
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.throwRuntimeException;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.pop;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.createJarAndLoad;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public final class SimpleClassWriterTest {
     
     private ClassNode classNode;
     private MethodNode methodNode;
     
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         byte[] classData = readZipFromResource("SimpleStub.zip").get("SimpleStub.class");
         

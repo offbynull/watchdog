@@ -19,13 +19,12 @@ package com.offbynull.watchdog.instrumenter.asm;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipFromResource;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
 import java.io.IOException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -33,13 +32,10 @@ import org.objectweb.asm.tree.MethodNode;
 
 public final class VariableTableTest {
     
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-    
     private ClassNode classNode;
     private MethodNode methodNode;
     
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         byte[] classData = readZipFromResource("SimpleStub.zip").get("SimpleStub.class");
         
@@ -108,8 +104,9 @@ public final class VariableTableTest {
         
         fixture.releaseExtra(var1);
         
-        thrown.expect(IllegalArgumentException.class);
-        fixture.releaseExtra(var1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            fixture.releaseExtra(var1);
+        });
     }
 
     @Test
@@ -119,8 +116,9 @@ public final class VariableTableTest {
         
         fixture.releaseExtra(var1);
         
-        thrown.expect(IllegalArgumentException.class);
-        var1.getType();
+        assertThrows(IllegalArgumentException.class, () -> {
+            var1.getType();
+        });
     }
     
     @Test
@@ -130,8 +128,9 @@ public final class VariableTableTest {
         
         fixture.releaseExtra(var1);
         
-        thrown.expect(IllegalArgumentException.class);
-        var1.getIndex();
+        assertThrows(IllegalArgumentException.class, () -> {
+            var1.getIndex();
+        });
     }
 
     @Test
@@ -148,8 +147,9 @@ public final class VariableTableTest {
         assertEquals(var1Reacquired.getType(), Type.LONG_TYPE);
         assertEquals(var1Reacquired.getIndex(), 1);
         assertTrue(var1Reacquired.isUsed());
-        thrown.expect(IllegalArgumentException.class);
-        var1.getIndex();
+        assertThrows(IllegalArgumentException.class, () -> {
+            var1.getIndex();
+        });
     }
     
 }

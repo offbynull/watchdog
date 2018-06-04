@@ -17,8 +17,8 @@
 package com.offbynull.watchdog.instrumenter.asm;
 
 import org.apache.commons.lang3.reflect.MethodUtils;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;

@@ -1,22 +1,22 @@
 package com.offbynull.watchdog.instrumenter.asm;
 
 import java.io.Serializable;
-import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Type;
 
 public class TypeUtilsTest {
     
     private static ClassResourceClassInformationRepository repo;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         repo = new ClassResourceClassInformationRepository(TypeUtilsTest.class.getClassLoader());
     }
     
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         repo = null;
     }

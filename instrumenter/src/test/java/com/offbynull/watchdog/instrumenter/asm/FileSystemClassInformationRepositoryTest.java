@@ -4,20 +4,20 @@ import com.offbynull.watchdog.instrumenter.testhelpers.TestUtils;
 import java.io.File;
 import static java.util.Arrays.asList;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public final class FileSystemClassInformationRepositoryTest {
     
     private static File jarFile;
     private static FileSystemClassInformationRepository repo;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() throws Exception {
         byte[] data = TestUtils.getResource("FakeJVMClasses.jar");
         
@@ -28,7 +28,7 @@ public final class FileSystemClassInformationRepositoryTest {
         repo = FileSystemClassInformationRepository.create(asList(jarFile));
     }
     
-    @AfterClass
+    @AfterAll
     public static void afterClass() {
         jarFile.delete();
     }

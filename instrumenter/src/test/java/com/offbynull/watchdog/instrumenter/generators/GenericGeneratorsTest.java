@@ -22,13 +22,9 @@ import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipR
 import java.lang.reflect.InvocationTargetException;
 import java.net.URLClassLoader;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.junit.Before;
-import org.junit.Test;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static com.offbynull.watchdog.instrumenter.asm.SearchUtils.findMethodsWithName;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
@@ -43,6 +39,10 @@ import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.s
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.tableSwitch;
 import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.throwRuntimeException;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.createJarAndLoad;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 
 public final class GenericGeneratorsTest {
@@ -54,7 +54,7 @@ public final class GenericGeneratorsTest {
     private ClassNode classNode;
     private MethodNode methodNode;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         // Load class, get method
         classNode = readZipResourcesAsClassNodes(ZIP_RESOURCE_PATH).get(STUB_FILENAME);
@@ -116,21 +116,21 @@ public final class GenericGeneratorsTest {
             
             try {
                 MethodUtils.invokeMethod(obj, STUB_METHOD_NAME, 0, 0);
-                fail();
+                fail("failed");
             } catch (InvocationTargetException ex) {
                 assertEquals("0", ex.getCause().getMessage());
             }
 
             try {
                 MethodUtils.invokeMethod(obj, STUB_METHOD_NAME, 2, 10);
-                fail();
+                fail("failed");
             } catch (InvocationTargetException ex) {
                 assertEquals("innerdefault", ex.getCause().getMessage());
             }
 
             try {
                 MethodUtils.invokeMethod(obj, STUB_METHOD_NAME, 10, 0);
-                fail();
+                fail("failed");
             } catch (InvocationTargetException ex) {
                 assertEquals("default", ex.getCause().getMessage());
             }
