@@ -18,6 +18,7 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
    * [Instrumentation](#instrumentation)
    * [Monitoring](#monitoring)
    * [Watching](#watching)
+   * [Common Pitfalls and Best Practices](#common-pitfalls-and-best-practices)
  * [Configuration Guide](#configuration-guide)
    * [Marker Type](#marker-type)
  * [FAQ](#faq)
@@ -198,6 +199,8 @@ Exception in thread "main" com.offbynull.watchdog.user.CodeInterruptedException
 ### Monitoring
 
 ### Watching
+
+### Common Pitfalls and Best Practices
 
 ## Configuration Guide
 
