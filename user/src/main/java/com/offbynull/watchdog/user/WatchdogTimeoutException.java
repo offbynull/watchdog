@@ -17,9 +17,16 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Thrown when a thread is in actively running instrumented code and takes longer than desired to execute (e.g. in a hard loop).
+ * Thrown when the execution of watchdog'd code takes longer than desired to execute.
  * @author Kasra Faghihi
  */
-public final class CodeInterruptedException extends RuntimeException {
+public final class WatchdogTimeoutException extends RuntimeException {
     static final long serialVersionUID = 0L;
+
+    WatchdogTimeoutException() {
+    }
+
+    WatchdogTimeoutException(Throwable cause) {
+        super(cause);
+    }
 }

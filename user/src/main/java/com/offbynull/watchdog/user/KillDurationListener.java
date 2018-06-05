@@ -24,8 +24,8 @@ final class KillDurationListener implements BranchListener, MethodEntryListener 
     
     private static final ScheduledThreadPoolExecutor TIMER;
     
-    private volatile boolean hit = false;
-    private final Thread thread;
+    private volatile boolean timeExceededFlag = false; // touched by both timer thread and main thread
+    private boolean killProcessedFlag = false;         // touched by only main thread
 
     static {
         ThreadFactory threadFactory = (r) -> {
@@ -40,26 +40,21 @@ final class KillDurationListener implements BranchListener, MethodEntryListener 
         TIMER.allowCoreThreadTimeOut(true);
     }
     
-    static KillDurationListener create(long delay, boolean interruptCode, boolean interruptBlocking) {
+    static KillDurationListener create(long delay, BlockedInterrupter blockedIoInterrupter) {
+        if (blockedIoInterrupter == null) {
+            throw new NullPointerException();
+        } 
         if (delay < 0L) {
             throw new IllegalArgumentException();
         }
         Thread thread = Thread.currentThread();
-        KillDurationListener listener = new KillDurationListener(thread);
+        KillDurationListener listener = new KillDurationListener();
         TIMER.schedule(() -> {
-            if (interruptCode) {
-                listener.hit = true;
-            }
-            if (interruptBlocking) {
-                thread.interrupt();
-            }
+            blockedIoInterrupter.interrupt(thread);     // close any IO resources that may be blocking
+            listener.timeExceededFlag = true;  // set time exceeded flag, if the code unblocks with no exception then it'll get one
         }, delay, TimeUnit.MILLISECONDS);
         
         return listener;
-    }
-
-    private KillDurationListener(Thread thread) {
-        this.thread = thread;
     }
 
     @Override
@@ -71,10 +66,25 @@ final class KillDurationListener implements BranchListener, MethodEntryListener 
     public void onMethodEntry() {
         hitCheck();
     }
+
+    public boolean isTimeExceeded() {
+        return timeExceededFlag;
+    }
     
     private void hitCheck() {
-        if (hit) {
-            throw new CodeInterruptedException();
+        // Has time exceeded??? If not, return
+        if (!timeExceededFlag) {
+            return;
         }
+
+        // Have we already thrown a CodeInterruptedException??? If yes, return -- subsequent hits may be from cleanup regions (finally
+        // blocks).
+        if (killProcessedFlag) {
+            return;
+        }
+        
+        // Throw CodeInterruptedException exception
+        killProcessedFlag = true;
+        throw new CodeInterruptedException();
     }
 }

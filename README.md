@@ -159,39 +159,41 @@ The Watchdog Java Agent won't instrument classes that have already been instrume
 First, declare classes and methods to watch...
 
 ```java
-@Watch // can be applied to class or individual methods
-public class ClassA {
-    public void infiniteLoop() {
-        for (int i = 0; i < 1; i+=0) {
-        }
+@Watch // Apply annotation to class or individual methods
+public class Main {
+    public static void infiniteLoop() {
+        while (true) { }
     }
 }
 ```
 
-Then, launch it and watch...
+Then, launch and watch...
 
 ```java
 // Launch code.  If doesn't finish in 2.5 seconds, break out.
 WatchdogLauncher.watch(2500L, (Watchdog wd) -> {
-    new ClassA().infiniteLoop();
+    Main.infiniteLoop();
 });
 ```
 
-After 2.5 seconds, you should get a ```CodeInterruptedException```...
+After 2.5 seconds, you should get a ```WatchdogTimeoutException```...
 
 ```
-Exception in thread "main" com.offbynull.watchdog.user.CodeInterruptedException
-	at com.offbynull.watchdog.user.KillDurationListener.hitCheck(KillDurationListener.java:77)
-	at com.offbynull.watchdog.user.KillDurationListener.onBranch(KillDurationListener.java:67)
+Exception in thread "main" com.offbynull.watchdog.user.WatchdogTimeoutException:
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:149)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:110)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:85)
+	at test.Launcher.main(Launcher.java:9)
+Caused by: com.offbynull.watchdog.user.CodeInterruptedException
+	at com.offbynull.watchdog.user.KillDurationListener.hitCheck(KillDurationListener.java:88)
+	at com.offbynull.watchdog.user.KillDurationListener.onBranch(KillDurationListener.java:62)
 	at com.offbynull.watchdog.user.Watchdog.onBranch(Watchdog.java:63)
-	at test.ClassA.infiniteLoop(ClassA.java:8)
-	at test.Main.lambda$main$0(Main.java:10)
-	at com.offbynull.watchdog.user.WatchdogLauncher.lambda$watch$0(WatchdogLauncher.java:78)
+	at test.Main.infiniteLoop(Main.java:8)
+	at test.Launcher.lambda$main$0(Launcher.java:10)
+	at com.offbynull.watchdog.user.WatchdogLauncher.lambda$watch$0(WatchdogLauncher.java:82)
 	at com.offbynull.watchdog.user.WatchdogLauncher.monitor(WatchdogLauncher.java:53)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:126)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:106)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:81)
-	at test.Main.main(Main.java:9)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:142)
+	... 3 more
 ```
 
 ## Usage Guide

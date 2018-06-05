@@ -17,9 +17,16 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Thrown when a thread is in actively running instrumented code and takes longer than desired to execute (e.g. in a hard loop).
+ * Blocked thread interrupter.
  * @author Kasra Faghihi
  */
-public final class CodeInterruptedException extends RuntimeException {
-    static final long serialVersionUID = 0L;
+public interface BlockedInterrupter {
+
+    /**
+     * Takes action to unblock a thread. Typically releases resources (e.g. database connections, sockets, files, etc..) such that the main
+     * thread, if it were blocking on one of those resources, can continue executing.
+     * @param thread blocked thread
+     * @throws NullPointerException if thread is {@code null}
+     */
+    void interrupt(Thread thread);
 }

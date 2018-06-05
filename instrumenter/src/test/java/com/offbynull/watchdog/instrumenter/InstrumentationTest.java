@@ -24,7 +24,7 @@ import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.getClass
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.loadClassesInZipResourceAndInstrument;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipFromResource;
 import com.offbynull.watchdog.user.BranchListener;
-import com.offbynull.watchdog.user.CodeInterruptedException;
+import com.offbynull.watchdog.user.WatchdogTimeoutException;
 import com.offbynull.watchdog.user.InstantiateListener;
 import com.offbynull.watchdog.user.MethodEntryListener;
 import com.offbynull.watchdog.user.WatchdogLauncher;
@@ -47,11 +47,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls, wd);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls, wd);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -61,11 +64,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TightLoopAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TightLoopAnnotationTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -75,11 +81,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls, wd);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls, wd);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -89,11 +98,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("LookupSwitchAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("LookupSwitchAnnotationTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -103,11 +115,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchTest.zip", new InstrumentationSettings(MarkerType.NONE))) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls, wd);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls, wd);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -117,11 +132,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("TableSwitchAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("TableSwitchAnnotationTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(100L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -131,11 +149,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(10L, true, false, (wd) -> {
-                    createObject(cls, wd);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(10L,
+                        wd -> {
+                            createObject(cls, wd);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -145,11 +166,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveAnnotationTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(10L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(10L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -159,11 +183,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveClassAnnotationTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveClassAnnotationTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(10L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(10L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -173,11 +200,14 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(10L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(10L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
     }
@@ -187,13 +217,31 @@ public final class InstrumentationTest {
         try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveMixSameMethodTest.zip")) {
             Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveMixSameMethodTest");
             
-            assertThrows(CodeInterruptedException.class, () -> {
-                WatchdogLauncher.watch(0L, true, false, (wd) -> {
-                    createObject(cls);
-                    return null;
-                });
+            assertThrows(WatchdogTimeoutException.class, () -> {
+                WatchdogLauncher.watch(0L,
+                        wd -> {
+                            createObject(cls);
+                            return null;
+                        },
+                        t -> { }
+                );
             });
         }
+    }
+
+    @Test
+    public void mustTimeoutProperlyOnBlockedThread() throws Exception {            
+        assertThrows(WatchdogTimeoutException.class, () -> {
+            WatchdogLauncher.watch(0L,
+                    wd -> {
+                        Thread.sleep(Long.MAX_VALUE); // sleep forever
+                        return null;
+                    },
+                    t -> {
+                        t.interrupt();
+                    }
+            );
+        });
     }
 
     @Test
@@ -206,7 +254,7 @@ public final class InstrumentationTest {
             BranchListener branchListener = () -> { };
             InstantiateListener instantiateListener = newObjs::add;
             MethodEntryListener methodEntryListener = () -> { };
-            WatchdogLauncher.monitor(branchListener, instantiateListener, methodEntryListener, (wd) -> {
+            WatchdogLauncher.monitor(branchListener, instantiateListener, methodEntryListener, wd -> {
                 createObject(cls, wd);
                 return null;
             });
