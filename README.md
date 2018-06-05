@@ -1,5 +1,7 @@
 # Watchdog
 
+<p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
+
 Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit that allows you to monitor your worker threads and potentially take corrective action when problems arise. When used correctly, the Watchdog project adds a layer of resiliency to your enterprise application that protects against runaway threads caused by software bugs and bad inputs.
 
 * Watch for and break out of blocked code (e.g. tight loops)
