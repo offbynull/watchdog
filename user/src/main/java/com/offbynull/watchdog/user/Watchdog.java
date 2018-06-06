@@ -67,6 +67,11 @@ public final class Watchdog {
         if (delay < 0L) {
             throw new IllegalArgumentException();
         }
+
+        if (TLS.get() != null) {
+            throw new IllegalStateException("Watchdog already active");
+        }
+
         Thread thread = Thread.currentThread();
         Watchdog watchdog = new Watchdog();
         TIMER.schedule(() -> {
@@ -81,7 +86,7 @@ public final class Watchdog {
                 }
             }
         }, delay, TimeUnit.MILLISECONDS);
-        
+
         TLS.set(watchdog);
         return watchdog;
     }
