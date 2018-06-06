@@ -58,6 +58,7 @@ public final class Watchdog {
     
     // Class fields
     private volatile boolean timeExceededFlag = false;          // touched by both timer thread and main thread
+    private int criticalSectionCounter = 0;                     // touched by only main thread
     private boolean killProcessedFlag = false;                  // touched by only main thread
 
     private final List<BlockedInterrupter> blockedInterrupters; // touched by both timer thread and main thread (sync implementation used)
@@ -120,16 +121,83 @@ public final class Watchdog {
         hitCheck();
     }
     
+    /**
+     * Enter critical section.
+     * <p>
+     * Watched classes enter critical sections in portions of code that should not be interrupted if the watchdog timer elapses. For
+     * example, catch/finally blocks that perform some type of clean up typically should not be interrupted.
+     * <p>
+     * Example usage...
+     * <code>
+     * watchdog.enterCriticalSection();
+     * try {
+     *     for (Resource res : resources) {
+     *         res.shutdown();
+     *     }
+     * } finally {
+     *     watchdog.exitCriticalSection();
+     * }
+     * </code>
+     * As seen in the example above, an invocation of this method must have a corresponding invocation of {@link #exitCriticalSection() }.
+     */
+    public void enterCriticalSection() {
+        criticalSectionCounter++;
+    }
+    
+    /**
+     * Exit critical section.
+     * @throws IllegalStateException if not in a critical section
+     */
+    public void exitCriticalSection() {
+        if (criticalSectionCounter == 0) {
+            throw new IllegalStateException();
+        }
+        criticalSectionCounter--;
+        hitCheck();
+    }
+
+    /**
+     * Execute the supplied runnable in a critical section. Equivalent to...
+     * <code>
+     * enterCriticalSection();
+     * try {
+     *     runnable.run();
+     * } finally {
+     *     exitCriticalSection();
+     * }
+     * </code>
+     * @param runnable runnable to execute
+     * @throws NullPointerException if any argument is {@code null}
+     */
+    public void wrapCriticalSection(Runnable runnable) {
+        if (runnable == null) {
+            throw new NullPointerException();
+        }
+        
+        enterCriticalSection();
+        try {
+            runnable.run();
+        } finally {
+            exitCriticalSection();
+        }
+    }
+    
     boolean isTimeExceeded() {
         return timeExceededFlag;
     }
-    
+
     private void hitCheck() {
         // Has time exceeded??? If not, return
         if (!timeExceededFlag) {
             return;
         }
 
+        // Has "killing" been disabled by the user? This is typically done during portions of code that should not be interrupted -- for
+        // example, cleaning up in finally blocks.
+        if (criticalSectionCounter > 0) {
+            return;
+        }
+        
         // Have we already thrown a CodeInterruptedException??? If yes, return -- subsequent hits may be from cleanup regions (finally
         // blocks).
         if (killProcessedFlag) {
@@ -145,6 +213,22 @@ public final class Watchdog {
     
     /**
      * Add blocked interrupter.
+     * <p>
+     * Blocked interrupters are invoked once the watchdog times out. Each blocked interrupter typically releases one or more resources (e.g.
+     * streams, sockets, files, database connections, etc..), such that the main thread, if it were blocking on one of those resources, can
+     * continue executing.
+     * <p>
+     * Example usage...
+     * <code>
+     * try (FileInputStream fis = new FileInputStream("in.txt")) {
+     *     watchdog.addBlockedInterrupter(t -> fis.close());
+     * 
+     *     String fileData = IOUtils.toString(fis);
+     *     System.out.println(fileData);
+     * }
+     * </code>
+     * If watching a large number of resources, you may choose to have a corresponding invocation of
+     * {@link #unwatchBlocking(com.offbynull.watchdog.user.BlockedInterrupter)  } for each invocation of this method.
      * @param blockedInterrupter blocked interrupter
      * @throws NullPointerException if any argument is {@code null}
      */
@@ -184,7 +268,7 @@ public final class Watchdog {
      * <code>
      * try (FileInputStream fis = new FileInputStream("in.txt");
      *      Closeable cfis = watchdog.wrapBlocking(fis);
-     *      FileOutputStream fos = new fileOutputStream("out.txt);
+     *      FileOutputStream fos = new FileOutputStream("out.txt");
      *      Closeable cfos = watchdog.wrapBlocking(fos)) {
      *     IOUtils.copy(fis, fos);
      * }
