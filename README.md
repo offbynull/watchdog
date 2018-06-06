@@ -6,7 +6,6 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
 
 * Watch for and break out of blocked code (e.g. tight loops)
 * Watch for and break out of blocked I/O
-* Monitor code execution: object instantiations, method entry, and branching
 
 ## Table of Contents
 

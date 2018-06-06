@@ -30,27 +30,24 @@ public final class Watchdog {
      */
     public static final Watchdog PLACEHOLDER = new Watchdog();           // Don't set this to null, because we want this field to be
                                                                          // actually referenced by the bytecode in other classes. If we
-                                                                         // set this to null, the compiler will try to optimize by
+                                                                         // set this to null, the compiler may try to optimize by
                                                                          // loading NULL directly onto the operand stack instead of
-                                                                         // actually loading the field.
+                                                                         // actually loading the field?
 
     private final BranchListener branchListener;
-    private final InstantiateListener instantiateListener;
     private final MethodEntryListener methodEntryListener;
     
     private Watchdog() {
         branchListener = null;
-        instantiateListener = null;
         methodEntryListener = null;
     }
     
-    Watchdog(BranchListener branchListener, InstantiateListener instantiateListener, MethodEntryListener methodEntryListener) {
-        if (branchListener == null || instantiateListener == null || methodEntryListener == null) {
+    Watchdog(BranchListener branchListener, MethodEntryListener methodEntryListener) {
+        if (branchListener == null || methodEntryListener == null) {
             throw new NullPointerException();
         }
 
         this.branchListener = branchListener;
-        this.instantiateListener = instantiateListener;
         this.methodEntryListener = methodEntryListener;
         TLS.set(this);
     }
@@ -61,15 +58,6 @@ public final class Watchdog {
      */
     public void onBranch() {
         branchListener.onBranch();
-    }
-
-
-    /**
-     * Do not use -- for internal use only.
-     * @param obj n/a
-     */
-    public void onInstantiate(Object obj) {
-        instantiateListener.onInstantiate(obj);
     }
 
     /**

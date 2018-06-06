@@ -117,8 +117,8 @@ public final class Instrumenter {
             new AnalyzeInstrumentationPass(),             // analyze methods
             new ReplacePlaceholderInstrumentationPass(),  // instrument method so that placeholders are replaced
             new BranchPointInstrumentationPass(),         // instrument method branch points
-            new ArrayInstantiationInstrumentationPass(),  // instrument method array instantiation points
-            new ObjectInstantiationInstrumentationPass(), // instrument method object instantiation points
+            //new ArrayInstantiationInstrumentationPass(),  // instrument method array instantiation points (DISABLED)
+            //new ObjectInstantiationInstrumentationPass(), // instrument method object instantiation points (DISABLED)
             new EntryPointInstrumentationPass(),          // instrument method entry point (must be last)
             new SetMarkerInstrumentationPass(),           // set already instrumented marker
         };

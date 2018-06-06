@@ -30,7 +30,6 @@ public final class WatchdogLauncher {
     /**
      * Run and monitor instrumented code.
      * @param branchListener listener to invoke on branch instructions
-     * @param instantiateListener listener to invoke on object instantiation instructions
      * @param methodEntryListener listener to invoke on method entrypoints
      * @param callable callable to execute
      * @param <V> the result type of {@code callable}
@@ -40,16 +39,15 @@ public final class WatchdogLauncher {
      */
     public static <V> V monitor(
             BranchListener branchListener,
-            InstantiateListener instantiateListener,
             MethodEntryListener methodEntryListener,
             WatchdogCallable<V> callable) throws Exception {
-        if (branchListener == null || instantiateListener == null || methodEntryListener == null || callable == null) {
+        if (branchListener == null || methodEntryListener == null || callable == null) {
             throw new NullPointerException();
         }
 
         Watchdog watchdog = null;
         try {
-            watchdog = new Watchdog(branchListener, instantiateListener, methodEntryListener);
+            watchdog = new Watchdog(branchListener, methodEntryListener);
             return callable.call(watchdog);
         } finally {
             if (watchdog != null) {
@@ -136,10 +134,9 @@ public final class WatchdogLauncher {
             throw new NullPointerException();
         } 
         KillDurationListener timeLimitListener = KillDurationListener.create(delay, blockedInterrupter);
-        InstantiateListener instantiateListener = (obj) -> { };
         
         try {
-            V ret = monitor(timeLimitListener, instantiateListener, timeLimitListener, callable);
+            V ret = monitor(timeLimitListener, timeLimitListener, callable);
             if (timeLimitListener.isTimeExceeded()) {
                 throw new WatchdogTimeoutException();
             }

@@ -23,10 +23,7 @@ import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.createJa
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.getClasspath;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.loadClassesInZipResourceAndInstrument;
 import static com.offbynull.watchdog.instrumenter.testhelpers.TestUtils.readZipFromResource;
-import com.offbynull.watchdog.user.BranchListener;
 import com.offbynull.watchdog.user.WatchdogTimeoutException;
-import com.offbynull.watchdog.user.InstantiateListener;
-import com.offbynull.watchdog.user.MethodEntryListener;
 import com.offbynull.watchdog.user.WatchdogLauncher;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -36,7 +33,6 @@ import java.util.List;
 import static org.apache.commons.lang3.reflect.ConstructorUtils.invokeConstructor;
 import static org.apache.commons.lang3.reflect.MethodUtils.invokeExactStaticMethod;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
@@ -242,38 +238,6 @@ public final class InstrumentationTest {
                     }
             );
         });
-    }
-
-    @Test
-    public void mustInstrumentObjectInstantiation() throws Exception {
-        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("InstantiationTest.zip")) {
-            Class<?> cls = (Class<?>) classLoader.loadClass("InstantiationTest");
-            
-            List<Object> newObjs = new ArrayList<>();
-            
-            BranchListener branchListener = () -> { };
-            InstantiateListener instantiateListener = newObjs::add;
-            MethodEntryListener methodEntryListener = () -> { };
-            WatchdogLauncher.monitor(branchListener, instantiateListener, methodEntryListener, wd -> {
-                createObject(cls, wd);
-                return null;
-            });
-            
-            assertEquals(false, newObjs.get(0));
-            assertEquals((byte) 1, newObjs.get(1));
-            assertEquals((char) 2, newObjs.get(2));
-            assertEquals((short) 3, newObjs.get(3));
-            assertEquals(4, newObjs.get(4));
-            assertEquals(5L, newObjs.get(5));
-            assertEquals(0.2f, newObjs.get(6));
-            assertEquals(0.7, newObjs.get(7));
-            assertEquals("StandaloneClass", newObjs.get(8).getClass().getSimpleName());
-            assertEquals("ChildClass", newObjs.get(9).getClass().getSimpleName());
-            assertEquals(int[].class, newObjs.get(10).getClass());
-            assertEquals(int[][].class, newObjs.get(11).getClass());
-            assertEquals(Object[].class, newObjs.get(12).getClass());
-            assertEquals(Object[][].class, newObjs.get(13).getClass());
-        }
     }
     
     @Test
