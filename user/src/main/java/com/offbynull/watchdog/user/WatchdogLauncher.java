@@ -18,7 +18,7 @@ package com.offbynull.watchdog.user;
 
 
 /**
- * Launches your instrumented code alongside a watchdog.
+ * Watchdog launcher.
  * @author Kasra Faghihi
  */
 public final class WatchdogLauncher {
@@ -28,17 +28,13 @@ public final class WatchdogLauncher {
     }
     
     /**
-     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
-     * is...
-     * <ul>
-     * <li>waiting (e.g. blocked on IO, thread sync, etc..), the thread's {@link Thread#interrupt() } will be invoked.</li>
-     * <li>running (e.g. in a hard loop), the thread will throw {@link CodeInterruptedException} (once in an instrumented method).</li>
-     * </ul>
-     * Equivalent to calling {@code monitor(delay, true, true, callable)}.
+     * Run and watch instrumented code such that it finishes within the specified duration.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param runnable runnable to execute
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if {@code delay} is negative
+     * @throws IllegalStateException if this method was invoked from code already being watched
+     * @throws WatchdogTimeoutException delay elapsed while code was still running
      * @throws RuntimeException {@code runnable}'s exception
      */
     public static void watch(long delay, WatchdogRunnable runnable) {
@@ -60,13 +56,14 @@ public final class WatchdogLauncher {
     }
 
     /**
-     * Run and monitor instrumented code such that it finishes within the specified duration.
+     * Run and watch instrumented code such that it finishes within the specified duration.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param callable callable to execute
      * @param <V> the result type of {@code callable}
      * @return callable result
      * @throws NullPointerException if any argument is {@code null}
      * @throws IllegalArgumentException if {@code delay} is negative
+     * @throws IllegalStateException if this method was invoked from code already being watched
      * @throws WatchdogTimeoutException delay elapsed while code was still running
      * @throws Exception {@code callable}'s exception
      */

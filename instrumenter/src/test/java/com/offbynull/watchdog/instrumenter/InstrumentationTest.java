@@ -226,6 +226,22 @@ public final class InstrumentationTest {
             );
         });
     }
+
+    @Test
+    public void mustNotAllowWatchIfAlreadyWatched() throws Exception {
+        try (URLClassLoader classLoader = loadClassesInZipResourceAndInstrument("RecursiveWatchTest.zip")) {
+            Class<?> cls = (Class<?>) classLoader.loadClass("RecursiveWatchTest");
+            
+            assertThrows(IllegalStateException.class, () -> {
+                WatchdogLauncher.watch(100L,
+                        wd -> {
+                            createObject(cls, wd);
+                            return null;
+                        }
+                );
+            });
+        }
+    }
     
     @Test
     public void mustNotDoubleInstrument() throws Exception {
