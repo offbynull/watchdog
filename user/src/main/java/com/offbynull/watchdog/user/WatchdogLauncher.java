@@ -26,35 +26,6 @@ public final class WatchdogLauncher {
     private WatchdogLauncher() {
         // do nothing
     }
-
-    /**
-     * Run and monitor instrumented code.
-     * @param branchListener listener to invoke on branch instructions
-     * @param methodEntryListener listener to invoke on method entrypoints
-     * @param callable callable to execute
-     * @param <V> the result type of {@code callable}
-     * @return {@code callable}'s result
-     * @throws NullPointerException if any argument is {@code null}
-     * @throws Exception {@code callable}'s exception
-     */
-    public static <V> V monitor(
-            BranchListener branchListener,
-            MethodEntryListener methodEntryListener,
-            WatchdogCallable<V> callable) throws Exception {
-        if (branchListener == null || methodEntryListener == null || callable == null) {
-            throw new NullPointerException();
-        }
-
-        Watchdog watchdog = null;
-        try {
-            watchdog = new Watchdog(branchListener, methodEntryListener);
-            return callable.call(watchdog);
-        } finally {
-            if (watchdog != null) {
-                watchdog.shutdown();
-            }
-        }
-    }
     
     /**
      * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
@@ -89,36 +60,9 @@ public final class WatchdogLauncher {
     }
 
     /**
-     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
-     * is...
-     * <ul>
-     * <li>waiting (e.g. blocked on IO, thread sync, etc..), the thread's {@link Thread#interrupt() } will be invoked.</li>
-     * <li>running (e.g. in a hard loop), the thread will throw {@link CodeInterruptedException} (once in an instrumented method).</li>
-     * </ul>
-     * Equivalent to calling {@code watch(delay, callable, (t) -> t.interrupt())}.
+     * Run and monitor instrumented code such that it finishes within the specified duration.
      * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
      * @param callable callable to execute
-     * @param <V> the result type of {@code callable}
-     * @return callable result
-     * @throws NullPointerException if any argument is {@code null}
-     * @throws IllegalArgumentException if {@code delay} is negative
-     * @throws Exception {@code callable}'s exception
-     */
-    public static <V> V watch(long delay, WatchdogCallable<V> callable) throws Exception {
-        return watch(delay, callable, (t) -> t.interrupt());
-    }
-
-    /**
-     * Run and monitor instrumented code such that it finishes within the specified duration. If the duration passes while the callable
-     * is...
-     * <ul>
-     * <li>waiting (e.g. blocked on IO, thread sync, etc..), {@code blockedInterrupter.interrupt(...)} will be invoked</li>
-     * <li>running (e.g. in a hard loop), the thread will throw an exception (once in an instrumented method)</li>
-     * </ul>
-     * ... and this method will throw a {@link WatchdogTimeoutException}.
-     * @param delay maximum amount of time (in milliseconds) to wait before watchdog triggers
-     * @param callable callable to execute
-     * @param blockedInterrupter I/O unblocker (code to execute to break out of blocking I/O -- executed in separate thread)
      * @param <V> the result type of {@code callable}
      * @return callable result
      * @throws NullPointerException if any argument is {@code null}
@@ -126,26 +70,33 @@ public final class WatchdogLauncher {
      * @throws WatchdogTimeoutException delay elapsed while code was still running
      * @throws Exception {@code callable}'s exception
      */
-    public static <V> V watch(long delay, WatchdogCallable<V> callable, BlockedInterrupter blockedInterrupter) throws Exception {
+    public static <V> V watch(long delay, WatchdogCallable<V> callable) throws Exception {
         if (delay < 0L) {
             throw new IllegalArgumentException();
         }
-        if (callable == null || blockedInterrupter == null) {
+        if (callable == null) {
             throw new NullPointerException();
-        } 
-        KillDurationListener timeLimitListener = KillDurationListener.create(delay, blockedInterrupter);
+        }
         
+        Watchdog watchdog = null;
         try {
-            V ret = monitor(timeLimitListener, timeLimitListener, callable);
-            if (timeLimitListener.isTimeExceeded()) {
+            watchdog = Watchdog.create(delay);
+            
+            V ret = callable.call(watchdog);
+            if (watchdog.isTimeExceeded()) {
                 throw new WatchdogTimeoutException();
             }
+            
             return ret;
         } catch (Exception e) {
-            if (timeLimitListener.isTimeExceeded()) {
+            if (watchdog != null && watchdog.isTimeExceeded()) {
                 throw new WatchdogTimeoutException(e);
             }
             throw e;
+        } finally {
+            if (watchdog != null) {
+                watchdog.shutdown();
+            }
         }
     }
 }

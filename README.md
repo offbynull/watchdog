@@ -179,27 +179,21 @@ After 2.5 seconds, you should get a ```WatchdogTimeoutException```...
 
 ```
 Exception in thread "main" com.offbynull.watchdog.user.WatchdogTimeoutException:
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:149)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:110)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:85)
-	at test.Launcher.main(Launcher.java:9)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:93)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:54)
+	at test.Launcher.main(Launcher.java:8)
 Caused by: com.offbynull.watchdog.user.CodeInterruptedException
-	at com.offbynull.watchdog.user.KillDurationListener.hitCheck(KillDurationListener.java:88)
-	at com.offbynull.watchdog.user.KillDurationListener.onBranch(KillDurationListener.java:62)
-	at com.offbynull.watchdog.user.Watchdog.onBranch(Watchdog.java:63)
+	at com.offbynull.watchdog.user.Watchdog.hitCheck(Watchdog.java:141)
+	at com.offbynull.watchdog.user.Watchdog.onBranch(Watchdog.java:113)
 	at test.Main.infiniteLoop(Main.java:8)
-	at test.Launcher.lambda$main$0(Launcher.java:10)
-	at com.offbynull.watchdog.user.WatchdogLauncher.lambda$watch$0(WatchdogLauncher.java:82)
-	at com.offbynull.watchdog.user.WatchdogLauncher.monitor(WatchdogLauncher.java:53)
-	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:142)
-	... 3 more
+	at test.Launcher.lambda$main$0(Launcher.java:8)
+	at com.offbynull.watchdog.user.WatchdogLauncher.lambda$watch$0(WatchdogLauncher.java:51)
+	at com.offbynull.watchdog.user.WatchdogLauncher.watch(WatchdogLauncher.java:85)
 ```
 
 ## Usage Guide
 
 ### Instrumentation
-
-### Monitoring
 
 ### Watching
 

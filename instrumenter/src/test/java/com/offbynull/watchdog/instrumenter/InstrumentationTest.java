@@ -48,8 +48,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls, wd);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -65,8 +64,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -82,8 +80,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls, wd);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -99,8 +96,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -116,8 +112,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls, wd);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -133,8 +128,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -150,8 +144,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls, wd);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -167,8 +160,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -184,8 +176,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -201,8 +192,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -218,8 +208,7 @@ public final class InstrumentationTest {
                         wd -> {
                             createObject(cls);
                             return null;
-                        },
-                        t -> { }
+                        }
                 );
             });
         }
@@ -228,13 +217,11 @@ public final class InstrumentationTest {
     @Test
     public void mustTimeoutProperlyOnBlockedThread() throws Exception {            
         assertThrows(WatchdogTimeoutException.class, () -> {
-            WatchdogLauncher.watch(0L,
+            WatchdogLauncher.watch(100L,
                     wd -> {
+                        wd.watchBlocking(t -> t.interrupt());
                         Thread.sleep(Long.MAX_VALUE); // sleep forever
                         return null;
-                    },
-                    t -> {
-                        t.interrupt();
                     }
             );
         });

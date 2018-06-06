@@ -23,10 +23,11 @@ package com.offbynull.watchdog.user;
 public interface BlockedInterrupter {
 
     /**
-     * Takes action to unblock a thread. Typically releases resources (e.g. database connections, sockets, files, etc..) such that the main
-     * thread, if it were blocking on one of those resources, can continue executing.
+     * Takes action to unblock a thread. Typically releases one or more resources (e.g. database connections, sockets, files, etc..), such
+     * that the main thread, if it were blocking on one of those resources, can continue executing.
      * @param thread blocked thread
      * @throws NullPointerException if thread is {@code null}
+     * @throws Exception if problem was encountered while taking action
      */
-    void interrupt(Thread thread);
+    void interrupt(Thread thread) throws Exception;
 }
