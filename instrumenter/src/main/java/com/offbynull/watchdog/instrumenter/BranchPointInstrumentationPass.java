@@ -64,6 +64,13 @@ final class BranchPointInstrumentationPass implements InstrumentationPass {
                     insnList.insertBefore(insnNode, trackInsnList);
                 }
                 
+                // IMPORTANT NOTE: We're applying checks BEFORE a branching operation. As such, branches resulting from a catch being
+                // triggered are not supported. But, it doesn't matter anyways -- going into a catch is normally a one-time thing. If you
+                // loop inside the catch or loop back out of the catch, it'll count a loop operation.
+                //
+                // There may be edge cases where you can loop infinitely through just by throwing and catching, but I doubt any JVM language
+                // does or will ever do this.
+                
                 // Move to next instruction
                 insnNode = insnNode.getNext();
             }
