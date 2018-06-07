@@ -336,9 +336,11 @@ try (FileInputStream fis = new FileInputStream("in.txt");
 
 ### Uninterruptible Sections
 
-Instrumented methods can have regions of code that remain uninterrupted if the watchdog timer elapses. These regions are called
-uninterruptible sections, and they're crucial for performing cleanup operations such as those typically found in catch/finally blocks. The
-usage pattern for this is simple: use ```Watchdog.enterUninterruptibleSection()``` to start an uninterruptible section and
+Instrumented methods can have regions of code that run uninterrupted by the watchdog. These regions are called uninterruptible sections. If
+the watchdog timer elapses while in an uninterruptible section, execution will continue until the uninterruptible section has been exited,
+at which point the code will abruptly exit.
+
+The usage pattern for this is simple: use ```Watchdog.enterUninterruptibleSection()``` to start an uninterruptible section and
 ```Watchdog.exitUninterruptibleSection()``` to leave it. For example...
 
 ```java
@@ -362,6 +364,9 @@ watchdog.wrapUninterruptibleSection(() -> {
 });
 ```
 
+Outside of performing crucial tasks such as cleanup operations typically found in catch/finally blocks, uninterruptible sections should be
+used sparingly.
+
 ### Launching
 
 Instrumented code must be launched through the ```WatchdogLauncher``` class. For example...
@@ -374,6 +379,10 @@ Result res = WatchdogLauncher.watch(2500L, (Watchdog wd) -> {
     return mainRes;
 });
 ```
+
+If the watchdog timer elapses before your instrumented code finishes, you'll receive a ```WatchdogTimeoutException```. Internally, however,
+your instrumented code will throw a ```CodeInterruptedException```. You should never catch/discard a ```CodeInterruptedException```
+exception.
 
 If you run instrumented code directly or attempt to launch code from code that's already been launched, you'll encounter an
 ```IllegalStateException```.

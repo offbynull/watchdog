@@ -17,7 +17,7 @@
 package com.offbynull.watchdog.user;
 
 /**
- * Thrown when a thread is in actively running instrumented code and takes longer than desired to execute (e.g. in a hard loop).
+ * Thrown when a thread is actively running instrumented code and takes longer than desired to execute.
  * @author Kasra Faghihi
  */
 public final class CodeInterruptedException extends RuntimeException {
