@@ -21,7 +21,6 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
    * [Marker Type](#marker-type)
  * [FAQ](#faq)
    * [How much overhead am I adding?](#how-much-overhead-am-i-adding)
-   * [What restrictions are there?](#what-restrictions-are-there)
    * [Can I use this with an IDE?](#can-i-use-this-with-an-ide)
    * [What alternatives are available?](#what-alternatives-are-available)
  * [Change Log](#change-log)
@@ -391,13 +390,6 @@ Marker type adds extra logic to track and output what the instrumenter added to 
 #### How much overhead am I adding?
 
 Instrumentation adds code to your classes, so your class files will become larger and that extra code will take time to execute. For most applications, especially enterprise applications that are I/O-heavy, the cost is negligible.
-
-#### What restrictions are there?
-
-The main restrictions have to do with JNI and reflections.
-
-* Instrumentation does not apply to native methods (JNI).
-* Objects instantiated via reflections won't be reported.
 
 #### Can I use this with an IDE?
 
