@@ -208,7 +208,7 @@ for your environment.
 It's important to note that Watchdog isn't a foolproof drop-in solution...
 
 1. It only guards code you write, not code in third-party libraries that you may be using.
-2. It's intended to be used in conjunction with good coding practices such as input validation.
+1. It's intended to be used in conjunction with good coding practices such as input validation.
 
 Please read the following subsections carefully as they detail important concepts, usage patterns, and gotchas.
 
