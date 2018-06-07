@@ -129,7 +129,7 @@ public final class Watchdog {
     /**
      * Enter critical section.
      * <p>
-     * Watched classes enter critical sections in portions of code that should not be interrupted if the watchdog timer elapses. For
+     * Watched methods enter critical sections in portions of code that should not be interrupted if the watchdog timer elapses. For
      * example, catch/finally blocks that perform some type of clean up typically should not be interrupted.
      * <p>
      * Example usage...
@@ -226,7 +226,7 @@ public final class Watchdog {
      * Example usage...
      * <code>
      * try (FileInputStream fis = new FileInputStream("in.txt")) {
-     *     watchdog.addBlockedInterrupter(t -> fis.close());
+     *     watchdog.watchBlocking(t -> fis.close());
      * 
      *     String fileData = IOUtils.toString(fis);
      *     System.out.println(fileData);

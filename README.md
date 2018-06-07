@@ -2,7 +2,7 @@
 
 <p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
 
-Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for guarding your code against infinite loops and stalled I/O. Why use Watchdog? When used correctly, the Watchdog project adds a layer of resiliency to your enterprise application that protects against software bugs and bad inputs.
+Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for helping guard against runaway code (e.g. infinite loops) and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your application that protects against software bugs and bad inputs.
 
 ## Table of Contents
 
@@ -13,10 +13,10 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
    * [Java Agent Instructions](#java-agent-instructions)
    * [Code Example](#code-example)
  * [Usage Guide](#configuration-guide)
-   * [Instrumentation](#instrumentation)
-   * [Monitoring](#monitoring)
-   * [Watching](#watching)
-   * [Common Pitfalls and Best Practices](#common-pitfalls-and-best-practices)
+   * [Watching Code](#watching-code)
+   * [Watching I/O](#watching-io)
+   * [Critical Sections](#critical-sections)
+   * [Launching](#launching)
  * [Configuration Guide](#configuration-guide)
    * [Marker Type](#marker-type)
  * [FAQ](#faq)
@@ -28,7 +28,7 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
 
 ## Quick-start Guide
 
-The Watchdog project relies on bytecode instrumentation to monitor your code. Maven, Ant, and Gradle plugins are provided to instrument your code. In addition to these plugins, a Java Agent is provided to instrument your code at runtime. Your code can target any version of Java from 9 onward.
+The Watchdog project relies on bytecode instrumentation to monitor your code. Maven, Ant, and Gradle plugins are provided to instrument your code. In addition to these plugins, a Java Agent is provided to instrument your code at runtime. Your code can target any version of Java from 9 to Java 10.
 
 ### Maven Instructions
 
@@ -190,11 +190,170 @@ Caused by: com.offbynull.watchdog.user.CodeInterruptedException
 
 ## Usage Guide
 
-### Instrumentation
+### Watching Code
 
-### Watching
+Watchdog relies on bytecode instrumentation to prevent runaway code such as infinite loops. There are 2 ways to mark your methods for
+instrumentation: annotations and method parameters.
 
-### Common Pitfalls and Best Practices
+The ```@Watch``` annotation is the simplest way to mark methods for instrumentation. Apply the annotation to a class to mark all methods
+within the class for instrumentation. Or, apply the annotation to individual methods to only mark those methods for instrumentation.
+
+```java
+@Watch
+public class AnnotatedClass {
+    public static void infiniteLoop() {
+        while (true) { }
+    }
+
+    public static void block(long wait) throws InterruptedException {
+        Thread.sleep(wait);
+    }
+}
+
+public class AnnotatedMethods {
+    @Watch
+    public static void infiniteLoop() {
+        while (true) { }
+    }
+
+    @Watch
+    public static void block(long wait) throws InterruptedException {
+        Thread.sleep(wait);
+    }
+}
+```
+
+The other way to mark methods for instrumentation is to change the parameter list of the method to take in a ```Watchdog``` as the first
+parameter. The argument passed in for that parameter can then be passed down the invocation chain.
+
+```java
+public class ParameterMethods {
+    public static void infiniteLoop(Watchdog watchdog) {
+        while (true) {
+            block(watchdog, 100L);
+        }
+    }
+
+    public static void block(Watchdog watchdog, long wait) throws InterruptedException {
+        Thread.sleep(wait);
+    }
+}
+```
+
+Whenever possible, you should opt for marking using a ```Watchdog``` parameter over a ```@Watch``` annotation. While both have their
+limitations, the instrumentation added for annotation marking is slower than parameter marking. For full coverage, mix annotation marking
+with parameter marking in the same class. For example...
+
+```java
+@Watch
+public class Mix {
+
+    public void test() {
+        for (int i = 0; i < 10; i++) {
+            List<Integer> list = newInstance(Watchdog.PLACEHOLDER);
+            System.out.println(list);
+        }
+    }
+
+    public List<Integer> create(Watchdog watchdog) {
+    	Random rand = new Random();
+    	
+    	LinkedList<Integer> list = new LinkedList<>();
+        IntStream.generate(() -> rand.nextInt()).forEach(x -> list.add(x));
+        
+        Collections.sort(list, (x,y) -> Integer.compare(x, y));
+
+        return list;
+    }
+}
+```
+
+In the example above, both the methods and the lambdas within will be instrumented. The ```create()``` method takes in a ```Watchdog```
+parameter, while the ```test()``` method and lambdas uses the ```@Watch``` annotation supplied on the class. Notice how ```test()``` is
+calling ```create()```, but since it doesn't have direct access to a ```Watchdog``` object to pass down the invocation chain, it uses
+```Watchdog.PLACEHOLDER```. If an annotated method ever needs access to the ```Watchdog``` object, ```Watchdog.PLACEHOLDER``` can be used.
+
+One important thing to be aware of with lambdas is that, at this time, directly passing in methods doesn't work. For example...
+
+```java
+IntStream.range(0,10).forEach(list::add);        // NO check applied for each call to List.add()
+IntStream.range(0,10).forEach(x -> list.add(x)); // check applied for each call to List.add()
+```
+
+### Watching I/O
+
+Instrumented methods can also take into account blocking I/O. The usage pattern for this is simple: use ```Watchdog.watchBlocking()``` to
+watch a I/O resource and ```Watchdog.unwatchBlocking()``` to unwatch it. If the watchdog times out, the resource gets closed based on the
+logic you supply. For example...
+
+```java
+BlockingInterrupter fisInterrupter = null;
+try (FileInputStream fis = new FileInputStream("in.txt")) {
+    fisInterrupter = t -> fis.close();
+    watchdog.watchBlocking(fisInterrupter);
+
+    String fileData = IOUtils.toString(fis);
+    System.out.println(fileData);
+} finally {
+    if (fisInterrupter != null) {
+        watchdog.unwatchBlocking(fisInterrupter);
+    }
+}
+```
+
+Alternatively, since the example above is using try-with-resources and ```Closeable```s, it can be simplified by using
+```Watchdog.wrapBlocking()```...
+
+```java
+try (FileInputStream fis = new FileInputStream("in.txt");
+     Closeable cfis = watchdog.wrapBlocking(fis);) {
+    String fileData = IOUtils.toString(fis);
+    System.out.println(fileData);
+}
+```
+
+### Critical Sections
+
+Instrumented methods can have regions of code that remain uninterrupted if the watchdog timer elapses. These regions are called critical
+sections, and they're crucial for performing cleanup operations such as those typically found in catch/finally blocks. The usage pattern for
+this is simple: use ```Watchdog.enterCriticalSection()``` to start a critical section and ```Watchdog.exitCriticalSection()``` to leave it.
+For example...
+
+```java
+watchdog.enterCriticalSection();
+try {
+    for (Resource res : resources) {
+        res.shutdown();
+    }
+} finally {
+    watchdog.exitCriticalSection();
+}
+```
+
+Alternatively, the example above can be simplified by using ```Watchdog.wrapCriticalSection()```...
+
+```java
+watchdog.wrapCriticalSection(() -> {
+    for (Resource res : resources) {
+        res.shutdown();
+    }    
+});
+```
+
+### Launching
+
+Instrumented code must be launched through the ```WatchdogLauncher``` class. For example...
+
+```java
+// Launch code.  If doesn't finish in 2.5 seconds throws a WatchdogTimeoutException.
+Result res = WatchdogLauncher.watch(2500L, (Watchdog wd) -> {
+    MainClass main = new MainClass(wd);
+    Result mainRes = main.execute(wd);
+    return mainRes;
+});
+```
+
+If you run instrumented code directly or attempt to recursively watch instrumented code, you'll encounter an ```IllegalStateException```.
 
 ## Configuration Guide
 
