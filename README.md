@@ -2,7 +2,9 @@
 
 <p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
 
-Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for helping guard your code against runaway loops and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your application that protects against software bugs and bad inputs.
+Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for
+helping guard your code against runaway loops and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your
+application that protects against software bugs and bad inputs.
 
 ## Table of Contents
 
@@ -27,13 +29,16 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
 
 ## Quick-start Guide
 
-The Watchdog project relies on bytecode instrumentation to monitor your code. Maven, Ant, and Gradle plugins are provided to instrument your code. In addition to these plugins, a Java Agent is provided to instrument your code at runtime. Your code can target any version of Java from 9 to Java 10.
+The Watchdog project relies on bytecode instrumentation to monitor your code. Maven, Ant, and Gradle plugins are provided to instrument your
+code. In addition to these plugins, a Java Agent is provided to instrument your code at runtime. Your code can target any version of Java
+from 9 to Java 10.
 
 ### Maven Instructions
 
 In your POM...
 
 First, add the "user" module as a dependency.
+
 ```xml
 <dependency>
     <groupId>com.offbynull.watchdog</groupId>
@@ -43,6 +48,7 @@ First, add the "user" module as a dependency.
 ```
 
 Then, add the Maven plugin so that your classes get instrumented when you build.
+
 ```xml
 <plugin>
     <groupId>com.offbynull.watchdog</groupId>
@@ -74,7 +80,9 @@ Then, add the Maven plugin so that your classes get instrumented when you build.
 
 In your build script...
 
-First, define the Ant Task. It's available for download from [Maven Central](https://repo1.maven.org/maven2/com/offbynull/watchdog/ant-plugin/1.0.0/ant-plugin-1.0.0-shaded.jar).
+First, define the Ant Task. It's available for download from
+[Maven Central](https://repo1.maven.org/maven2/com/offbynull/watchdog/ant-plugin/1.0.0/ant-plugin-1.0.0-shaded.jar).
+
 ```xml
 <taskdef name="InstrumentTask" classname="com.offbynull.watchdog.antplugin.InstrumentTask">
     <classpath>
@@ -84,6 +92,7 @@ First, define the Ant Task. It's available for download from [Maven Central](htt
 ```
 
 Then, bind it to the target of your choice.
+
 ```xml
 <target name="-post-compile">
     <!-- The classpath attribute is a semicolon delimited list of the classpath required by your code. -->
@@ -92,7 +101,8 @@ Then, bind it to the target of your choice.
 </target>
 ```
 
-You'll also need to include the "user" module's JAR in your classpath as a part of your build. It's also available for download from [Maven Central](https://repo1.maven.org/maven2/com/offbynull/watchdog/user/1.0.0/user-1.0.0.jar).
+You'll also need to include the "user" module's JAR in your classpath as a part of your build. It's also available for download from
+[Maven Central](https://repo1.maven.org/maven2/com/offbynull/watchdog/user/1.0.0/user-1.0.0.jar).
 
 ### Gradle Instructions
 
@@ -133,7 +143,8 @@ dependencies {
 
 ### Java Agent Instructions
 
-The Watchdog Java Agent allows you to instrument your code at runtime instead of build-time. That means that the bytecode instrumentation required to make your watchdog work happens when your application runs instead of when your application gets compiled.
+The Watchdog Java Agent allows you to instrument your code at runtime instead of build-time. That means that the bytecode instrumentation
+required to make your watchdog work happens when your application runs instead of when your application gets compiled.
 
 To use the Java Agent, download it from [Maven Central](https://repo1.maven.org/maven2/com/offbynull/watchdog/java-agent/1.0.0/java-agent-1.0.0-shaded.jar) and apply it when you run your Java program...
 
@@ -147,7 +158,8 @@ java -javaagent:java-agent-1.0.0-shaded.jar myapp.jar
 # -javaagent:java-agent-1.0.0-shaded.jar=key1=val1,key2=val2
 ```
 
-The Watchdog Java Agent won't instrument classes that have already been instrumented, so it should be safe to use it with classes that may have already gone through instrumentation (as long as those classes have been instrumented by the same version of the instrumenter).
+The Watchdog Java Agent won't instrument classes that have already been instrumented, so it should be safe to use it with classes that may
+have already gone through instrumentation (as long as those classes have been instrumented by the same version of the instrumenter).
 
 ### Code Example
 
@@ -368,7 +380,8 @@ If you run instrumented code directly or attempt to launch code from code that's
 
 ## Configuration Guide
 
-You can configure instrumentation by supplying key/value arguments to the instrumenter. Arguments are passed in differently depending on how you're performing instrumentation. If you're using...
+You can configure instrumentation by supplying key/value arguments to the instrumenter. Arguments are passed in differently depending on how
+you're performing instrumentation. If you're using...
 
  * Maven, provide configurations as XML tags inside the ```<configuration>``` tag ([Example](#maven-instructions))
  * Ant, provide configurations as XML attributes on the ```<InstrumentationTask>``` tag ([Example](#ant-instructions))
@@ -379,7 +392,8 @@ The following subsections provide information on the various configuration optio
 
 ### Marker Type
 
-Marker type adds extra logic to track and output what the instrumenter added to your methods. This provides core information for debugging problems with the instrumenter -- it provides little to no value for you as a user.
+Marker type adds extra logic to track and output what the instrumenter added to your methods. This provides core information for debugging
+problems with the instrumenter -- it provides little to no value for you as a user.
 
  * Name: ```markerType```.
  * Value: { ```NONE``` | ```CONST``` | ```STDOUT``` }.
@@ -389,13 +403,18 @@ Marker type adds extra logic to track and output what the instrumenter added to 
 
 #### How much overhead am I adding?
 
-Instrumentation adds code to your classes, so your class files will become larger and that extra code will take time to execute. For most applications, especially enterprise applications that are I/O-heavy, the cost is negligible.
+Instrumentation adds code to your classes, so your class files will become larger and that extra code will take time to execute. For most
+applications, especially enterprise applications that are I/O-heavy, the cost is negligible.
 
 #### Can I use this with an IDE?
 
-If your IDE delegates to one of the supported build systems (Maven/Gradle/Ant), you can use this with your IDE. In some cases, your IDE may try to optimize by prematurely compiling classes internally, skipping any instrumentation that should be taking place as a part of your build. You'll have to turn this feature off.
+If your IDE delegates to one of the supported build systems (Maven/Gradle/Ant), you can use this with your IDE. In some cases, your IDE may
+try to optimize by prematurely compiling classes internally, skipping any instrumentation that should be taking place as a part of your
+build. You'll have to turn this feature off.
 
-For example, if you're using Maven through Netbeans, you must turn off the "Compile On Save" feature that's enabled by default. Otherwise, as soon as you make a change to your code and save, Netbeans will compile your Java file without instrumentation. IntelliJ and Eclipse probably have similar options available.
+For example, if you're using Maven through Netbeans, you must turn off the "Compile On Save" feature that's enabled by default. Otherwise,
+as soon as you make a change to your code and save, Netbeans will compile your Java file without instrumentation. IntelliJ and Eclipse
+probably have similar options available.
 
 #### What alternatives are available?
 
