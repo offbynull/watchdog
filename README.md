@@ -2,7 +2,7 @@
 
 <p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
 
-Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for helping guard against runaway code (e.g. infinite loops) and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your application that protects against software bugs and bad inputs.
+Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for helping guard your code against runaway loops and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your application that protects against software bugs and bad inputs.
 
 ## Table of Contents
 
@@ -12,7 +12,7 @@ Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in e
    * [Gradle Instructions](#gradle-instructions)
    * [Java Agent Instructions](#java-agent-instructions)
    * [Code Example](#code-example)
- * [Usage Guide](#configuration-guide)
+ * [Usage Guide](#usage-guide)
    * [Watching Code](#watching-code)
    * [Watching I/O](#watching-io)
    * [Critical Sections](#critical-sections)
@@ -190,9 +190,20 @@ Caused by: com.offbynull.watchdog.user.CodeInterruptedException
 
 ## Usage Guide
 
+The Watchdog project is essentially a combination bytecode instrumenter and library that helps guard your code against a specific class of
+software bugs: runaway threads. If you haven't already done so, refer to the [Quick-start Guide](#quick-start-guide) for setup instructions
+for your environment.
+
+It's important to note that Watchdog isn't a foolproof drop-in solution...
+
+1. It only guards code you write, not code in third-party libraries that you may be using.
+2. It's intended to be used in conjunction with good coding practices such as input validation.
+
+Please read the following subsections carefully as they detail important concepts, usage patterns, and gotchas.
+
 ### Watching Code
 
-Watchdog relies on bytecode instrumentation to prevent runaway code such as infinite loops. There are 2 ways to mark your methods for
+Watchdog relies on bytecode instrumentation to break out of runaway code such as infinite loops. There are 2 ways to mark your methods for
 instrumentation: annotations and method parameters.
 
 The ```@Watch``` annotation is the simplest way to mark methods for instrumentation. Apply the annotation to a class to mark all methods
@@ -283,8 +294,8 @@ IntStream.range(0,10).forEach(x -> list.add(x)); // check applied for each call 
 ### Watching I/O
 
 Instrumented methods can also take into account blocking I/O. The usage pattern for this is simple: use ```Watchdog.watchBlocking()``` to
-watch a I/O resource and ```Watchdog.unwatchBlocking()``` to unwatch it. If the watchdog times out, the resource gets closed based on the
-logic you supply. For example...
+watch a I/O resource and ```Watchdog.unwatchBlocking()``` to unwatch it. If the watchdog timer elapses, the resource gets closed based on
+the logic you supply. For example...
 
 ```java
 BlockingInterrupter fisInterrupter = null;
@@ -353,7 +364,8 @@ Result res = WatchdogLauncher.watch(2500L, (Watchdog wd) -> {
 });
 ```
 
-If you run instrumented code directly or attempt to recursively watch instrumented code, you'll encounter an ```IllegalStateException```.
+If you run instrumented code directly or attempt to launch code from code that's already been launched, you'll encounter an
+```IllegalStateException```.
 
 ## Configuration Guide
 
