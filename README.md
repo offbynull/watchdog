@@ -17,7 +17,7 @@ application that protects against software bugs and bad inputs.
  * [Usage Guide](#usage-guide)
    * [Watching Code](#watching-code)
    * [Watching I/O](#watching-io)
-   * [Critical Sections](#critical-sections)
+   * [Uninterruptible Sections](#uninterruptible-sections)
    * [Launching](#launching)
  * [Configuration Guide](#configuration-guide)
    * [Marker Type](#marker-type)
@@ -334,28 +334,28 @@ try (FileInputStream fis = new FileInputStream("in.txt");
 }
 ```
 
-### Critical Sections
+### Uninterruptible Sections
 
-Instrumented methods can have regions of code that remain uninterrupted if the watchdog timer elapses. These regions are called critical
-sections, and they're crucial for performing cleanup operations such as those typically found in catch/finally blocks. The usage pattern for
-this is simple: use ```Watchdog.enterCriticalSection()``` to start a critical section and ```Watchdog.exitCriticalSection()``` to leave it.
-For example...
+Instrumented methods can have regions of code that remain uninterrupted if the watchdog timer elapses. These regions are called
+uninterruptible sections, and they're crucial for performing cleanup operations such as those typically found in catch/finally blocks. The
+usage pattern for this is simple: use ```Watchdog.enterUninterruptibleSection()``` to start an uninterruptible section and
+```Watchdog.exitUninterruptibleSection()``` to leave it. For example...
 
 ```java
-watchdog.enterCriticalSection();
+watchdog.enterUninterruptibleSection();
 try {
     for (Resource res : resources) {
         res.shutdown();
     }
 } finally {
-    watchdog.exitCriticalSection();
+    watchdog.exitUninterruptibleSection();
 }
 ```
 
-Alternatively, the example above can be simplified by using ```Watchdog.wrapCriticalSection()```...
+Alternatively, the example above can be simplified by using ```Watchdog.wrapUninterruptibleSection()```...
 
 ```java
-watchdog.wrapCriticalSection(() -> {
+watchdog.wrapUninterruptibleSection(() -> {
     for (Resource res : resources) {
         res.shutdown();
     }    

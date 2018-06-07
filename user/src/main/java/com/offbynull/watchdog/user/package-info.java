@@ -16,8 +16,7 @@
  */
 
 /**
- * User-level classes for watchdog. To track a thread, the code invoked by that thread should be piped through 
- * {@link com.offbynull.watchdog.user.Watchdog#watch}.
+ * User-level classes for watchdog.
  * 
  * @author Kasra Faghihi
  */

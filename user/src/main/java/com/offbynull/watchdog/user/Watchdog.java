@@ -58,7 +58,7 @@ public final class Watchdog {
     
     // Class fields
     private volatile boolean timeExceededFlag = false;          // touched by both timer thread and main thread
-    private int criticalSectionCounter = 0;                     // touched by only main thread
+    private int uninterruptibleSectionCounter = 0;                     // touched by only main thread
     private boolean killProcessedFlag = false;                  // touched by only main thread
 
     private final List<BlockedInterrupter> blockedInterrupters; // touched by both timer thread and main thread (sync implementation used)
@@ -127,63 +127,64 @@ public final class Watchdog {
     }
     
     /**
-     * Enter critical section.
+     * Enter uninterruptible section.
      * <p>
-     * Watched methods enter critical sections in portions of code that should not be interrupted if the watchdog timer elapses. For
+     * Watched methods enter uninterruptible sections in portions of code that should not be interrupted if the watchdog timer elapses. For
      * example, catch/finally blocks that perform some type of clean up typically should not be interrupted.
      * <p>
      * Example usage...
      * <code>
-     * watchdog.enterCriticalSection();
+     * watchdog.enterUninterruptibleSection();
      * try {
      *     for (Resource res : resources) {
      *         res.shutdown();
      *     }
      * } finally {
-     *     watchdog.exitCriticalSection();
+     *     watchdog.exitUninterruptibleSection();
      * }
      * </code>
-     * As seen in the example above, an invocation of this method must have a corresponding invocation of {@link #exitCriticalSection() }.
+     * As seen in the example above, an invocation of this method must have a corresponding invocation of
+     * {@link #exitUninterruptibleSection() }.
      */
-    public void enterCriticalSection() {
-        criticalSectionCounter++;
+    public void enterUninterruptibleSection() {
+        uninterruptibleSectionCounter++;
     }
     
     /**
-     * Exit critical section.
-     * @throws IllegalStateException if not in a critical section
+     * Exit uninterruptible section.
+     * @throws IllegalStateException if not in a uninterruptible section
      */
-    public void exitCriticalSection() {
-        if (criticalSectionCounter == 0) {
+    public void exitUninterruptibleSection() {
+        if (uninterruptibleSectionCounter == 0) {
             throw new IllegalStateException();
         }
-        criticalSectionCounter--;
+        uninterruptibleSectionCounter--;
         hitCheck();
     }
 
     /**
-     * Execute the supplied runnable in a critical section. Equivalent to...
+     * Execute the supplied runnable in a uninterruptible section. Equivalent to...
      * <code>
-     * enterCriticalSection();
+     * enterUninterruptibleSection();
      * try {
      *     runnable.run();
      * } finally {
-     *     exitCriticalSection();
+     *     exitUninterruptibleSection();
      * }
      * </code>
      * @param runnable runnable to execute
      * @throws NullPointerException if any argument is {@code null}
      */
-    public void wrapCriticalSection(Runnable runnable) {
+    public void wrapUninterruptibleSection(Runnable runnable) {
         if (runnable == null) {
             throw new NullPointerException();
         }
         
-        enterCriticalSection();
+        enterUninterruptibleSection();
         try {
             runnable.run();
         } finally {
-            exitCriticalSection();
+            exitUninterruptibleSection();
         }
     }
     
@@ -199,7 +200,7 @@ public final class Watchdog {
 
         // Has "killing" been disabled by the user? This is typically done during portions of code that should not be interrupted -- for
         // example, cleaning up in finally blocks.
-        if (criticalSectionCounter > 0) {
+        if (uninterruptibleSectionCounter > 0) {
             return;
         }
         
@@ -220,13 +221,13 @@ public final class Watchdog {
      * Add blocked interrupter.
      * <p>
      * Blocked interrupters are invoked once the watchdog times out. Each blocked interrupter typically releases one or more resources (e.g.
-     * streams, sockets, files, database connections, etc..), such that the main thread, if it were blocking on one of those resources, can
+     * streams, sockets, files, database connections, etc..), such that the main thread, if it were blocking on those resources, can
      * continue executing.
      * <p>
      * Example usage...
      * <code>
      * try (FileInputStream fis = new FileInputStream("in.txt")) {
-     *     watchdog.watchBlocking(t -> fis.close());
+     *     watchdog.watchBlocking(t -&gt; fis.close());
      * 
      *     String fileData = IOUtils.toString(fis);
      *     System.out.println(fileData);
