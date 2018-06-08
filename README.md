@@ -3,8 +3,8 @@
 <p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
 
 Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for
-helping guard your code against runaway loops and stalled I/O. Why use Watchdog? When used correctly, it adds a layer of resiliency to your
-application that protects against software bugs and bad inputs.
+helping guard your code against runaway loops and stalled I/O. When used correctly, it adds a layer of resiliency to your application that
+helps keep it up and running in the face of unexpected/malicious inputs and software bugs.
 
 ## Table of Contents
 
