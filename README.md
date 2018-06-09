@@ -370,15 +370,19 @@ that it adds into your class. These hidden static methods will get instrumented 
 Direct method references, however, don't work the same way. If a method reference isn't to a watched method and the watchdog timer elapses,
 it won't break out until it returns to (or it enters into) a watched method.
 
-For example, the following 2 lines do the same thing but they aren't equivalent...
+For example, the following 2 lines do the same thing: process a stream of longs...
 
 ```java
 LongStream.range(0L, 9999999L).forEach(x -> System.out.println(x)); // WILL break out of forEach()  -- lambda
 LongStream.range(0L, 9999999L).forEach(System.out::println);        // WON'T break out of forEach() -- direct method reference 
 ```
 
-Also, be careful when passing around lambdas created inside of watched methods. If a lambda runs outside of a watched context, it will
-instantly throw an exception. For example...
+In the example above, both lines do the same thing but they aren't equivalent. The first line takes in a lambda, and as such it can break
+out of the stream because that lambda routes back to a static method in the class that it's in. The second line is a direct method
+reference, so it won't be able to break out of the stream.
+
+Also, be careful when passing around lambdas created inside of watched methods. If they run outside of a watched context, an exception
+will be thrown. For example...
 
 ```java
 IntSupplier supplier = WatchdogLauncher.watch(10000L, wd -> { return WatchedClass.get(); });
