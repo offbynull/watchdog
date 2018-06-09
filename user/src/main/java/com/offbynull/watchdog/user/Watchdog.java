@@ -58,7 +58,7 @@ public final class Watchdog {
     
     // Class fields
     private volatile boolean timeExceededFlag = false;          // touched by both timer thread and main thread
-    private int uninterruptibleSectionCounter = 0;                     // touched by only main thread
+    private int uninterruptibleSectionCounter = 0;              // touched by only main thread
     private boolean killProcessedFlag = false;                  // touched by only main thread
 
     private final List<BlockedInterrupter> blockedInterrupters; // touched by both timer thread and main thread (sync implementation used)

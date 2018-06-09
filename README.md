@@ -2,9 +2,9 @@
 
 <p align="center"><img src ="logo.png" alt="Watchdog logo" /></p>
 
-Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is a Java toolkit for
-helping guard your code against runaway loops and stalled I/O. When used correctly, it adds a layer of resiliency to your application that
-helps keep it up and running in the face of unexpected/malicious inputs and software bugs.
+Inspired by [watchdog timers](https://en.wikipedia.org/wiki/Watchdog_timer) in embedded systems, the Watchdog project is an *experimental*
+Java toolkit for helping guard your code against runaway loops and stalled I/O. When used correctly, it adds a layer of resiliency to your
+application that helps keep it up and running in the face of unexpected/malicious inputs and software bugs.
 
 ## Table of Contents
 
@@ -19,6 +19,9 @@ helps keep it up and running in the face of unexpected/malicious inputs and soft
    * [Watching I/O](#watching-io)
    * [Uninterruptible Sections](#uninterruptible-sections)
    * [Launching](#launching)
+ * [Common Pitfalls and Best Practices](#common-pitfalls-and-best-practices)
+   * [JNI and Reflections](#jni-and-reflections)
+   * [Lambdas and Direct Method References](#lambdas-and-direct-method-references)
  * [Configuration Guide](#configuration-guide)
    * [Marker Type](#marker-type)
  * [FAQ](#faq)
@@ -166,7 +169,7 @@ have already gone through instrumentation (as long as those classes have been in
 First, declare classes and methods to watch...
 
 ```java
-@Watch // Apply annotation to class or individual methods
+@Watch
 public class Main {
     public static void infiniteLoop() {
         while (true) { }
@@ -214,11 +217,8 @@ Please read the following subsections carefully as they detail important concept
 
 ### Watching Code
 
-Watchdog relies on bytecode instrumentation to break out of runaway code such as infinite loops. There are 2 ways to mark your methods for
-instrumentation: annotations and method parameters.
-
-The ```@Watch``` annotation is the simplest way to mark methods for instrumentation. Apply the annotation to a class to mark all methods
-within the class for instrumentation. Or, apply the annotation to individual methods to only mark those methods for instrumentation.
+Watchdog relies on bytecode instrumentation to break out of runaway code such as infinite loops. Apply the ```@Watch``` annotation to a
+class to mark all methods within that class for instrumentation.
 
 ```java
 @Watch
@@ -231,40 +231,10 @@ public class AnnotatedClass {
         Thread.sleep(wait);
     }
 }
-
-public class AnnotatedMethods {
-    @Watch
-    public static void infiniteLoop() {
-        while (true) { }
-    }
-
-    @Watch
-    public static void block(long wait) throws InterruptedException {
-        Thread.sleep(wait);
-    }
-}
 ```
 
-The other way to mark methods for instrumentation is to change the parameter list of the method to take in a ```Watchdog``` as the first
-parameter. The argument passed in for that parameter can then be passed down the invocation chain.
-
-```java
-public class ParameterMethods {
-    public static void infiniteLoop(Watchdog watchdog) {
-        while (true) {
-            block(watchdog, 100L);
-        }
-    }
-
-    public static void block(Watchdog watchdog, long wait) throws InterruptedException {
-        Thread.sleep(wait);
-    }
-}
-```
-
-Whenever possible, you should opt for marking using a ```Watchdog``` parameter over a ```@Watch``` annotation. While both have their
-limitations, the instrumentation added for annotation marking is slower than parameter marking. For full coverage, mix annotation marking
-with parameter marking in the same class. For example...
+Whenever possible, you should take in a ```Watchdog``` as the starting parameter of your instrumented methods. While not explicitly
+required, the extra parameter allows the instrumenter to generate better performing instrumentation logic.
 
 ```java
 @Watch
@@ -272,7 +242,7 @@ public class Mix {
 
     public void test() {
         for (int i = 0; i < 10; i++) {
-            List<Integer> list = newInstance(Watchdog.PLACEHOLDER);
+            List<Integer> list = create(Watchdog.PLACEHOLDER);
             System.out.println(list);
         }
     }
@@ -290,17 +260,10 @@ public class Mix {
 }
 ```
 
-In the example above, both the methods and the lambdas within will be instrumented. The ```create()``` method takes in a ```Watchdog```
-parameter, while the ```test()``` method and lambdas uses the ```@Watch``` annotation supplied on the class. Notice how ```test()``` is
-calling ```create()```, but since it doesn't have direct access to a ```Watchdog``` object to pass down the invocation chain, it uses
-```Watchdog.PLACEHOLDER```. If an annotated method ever needs access to the ```Watchdog``` object, ```Watchdog.PLACEHOLDER``` can be used.
-
-One important thing to be aware of with lambdas is that, at this time, directly passing in methods doesn't work. For example...
-
-```java
-IntStream.range(0,10).forEach(list::add);        // NO check applied for each call to List.add()
-IntStream.range(0,10).forEach(x -> list.add(x)); // check applied for each call to List.add()
-```
+In the example above, all methods, including the hidden ones generated for the lambdas, will be instrumented. Notice how ```test()``` is
+calling ```create()```, but since it doesn't have direct access to the ```Watchdog``` object to pass down the invocation chain, it uses
+```Watchdog.PLACEHOLDER```. If a method ever needs access to the ```Watchdog``` object but doesn't have it available,
+```Watchdog.PLACEHOLDER``` can be used.
 
 ### Watching I/O
 
@@ -387,6 +350,60 @@ exception.
 If you run instrumented code directly or attempt to launch code from code that's already been launched, you'll encounter an
 ```IllegalStateException```.
 
+## Common Pitfalls and Best Practices
+
+Special care needs to be taken to avoid common pitfalls with using Watchdog. Ultimately, you're the one responsible for testing your code
+and making sure it works as intended. Having said that, the subsections below detail common pitfalls and best practices.
+
+### JNI and Reflections
+
+For obvious reasons, native methods are not instrumentable. If the watchdog timer elapses while in a native method, even if it's a method
+owned by the watched class, it won't break out until it returns to (or it enters into) to a watched Java method.
+
+Reflections should work, but there is no guarantee that that this continue to work in future versions.
+
+### Lambdas and Direct Method References
+
+Be careful when using lambdas and direct method references. The Java compiler makes it so that a lambda will route to a hidden static method
+that it adds into your class. These hidden static methods will get instrumented correctly.
+
+Direct method references, however, don't work the same way. If a method reference isn't to a watched method and the watchdog timer elapses,
+it won't break out until it returns to (or it enters into) a watched method.
+
+For example, the following 2 lines do the same thing but they aren't equivalent...
+
+```java
+LongStream.range(0L, 9999999L).forEach(x -> System.out.println(x)); // WILL break out of forEach()  -- lambda
+LongStream.range(0L, 9999999L).forEach(System.out::println);        // WON'T break out of forEach() -- direct method reference 
+```
+
+Also, be careful when passing around lambdas created inside of watched methods. If a lambda runs outside of a watched context, it will
+instantly throw an exception. For example...
+
+```java
+IntSupplier supplier = WatchdogLauncher.watch(10000L, wd -> { return WatchedClass.get(); });
+
+int i = supplier.getAsInt();
+System.out.println(i);
+
+
+@Watch
+public static final class WatchedClass {
+    public static IntSupplier get() {
+        return () -> 5;
+    }
+}
+```
+
+Will result in...
+
+```
+Exception in thread "main" java.lang.IllegalStateException: Bad state -- watchdog does not exist in TLS
+	at com.offbynull.watchdog.user.Watchdog.get(Watchdog.java:107)
+	at Main$WatchedClass.lambda$get$0(Main.java)
+	at Main.main(Main.java:11)
+```
+
 ## Configuration Guide
 
 You can configure instrumentation by supplying key/value arguments to the instrumenter. Arguments are passed in differently depending on how
@@ -404,9 +421,9 @@ The following subsections provide information on the various configuration optio
 Marker type adds extra logic to track and output what the instrumenter added to your methods. This provides core information for debugging
 problems with the instrumenter -- it provides little to no value for you as a user.
 
- * Name: ```markerType```.
- * Value: { ```NONE``` | ```CONST``` | ```STDOUT``` }.
- * Default: ```NONE```.
+ * Name: ```markerType```
+ * Value: { ```NONE``` | ```CONST``` | ```STDOUT``` }
+ * Default: ```NONE```
 
 ## FAQ
 
