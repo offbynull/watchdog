@@ -16,6 +16,8 @@
  */
 package com.offbynull.watchdog.instrumenter;
 
+import com.offbynull.watchdog.instrumenter.LoopFinder.Loop;
+import static com.offbynull.watchdog.instrumenter.LoopFinder.findLoops;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
 import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType;
 import static com.offbynull.watchdog.instrumenter.generators.DebugGenerators.debugMarker;
@@ -25,16 +27,13 @@ import static com.offbynull.watchdog.instrumenter.generators.GenericGenerators.m
 import com.offbynull.watchdog.user.Watchdog;
 import java.lang.reflect.Method;
 import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.commons.lang3.reflect.MethodUtils;
-import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.JumpInsnNode;
-import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TableSwitchInsnNode;
 
-final class BranchPointInstrumentationPass implements InstrumentationPass {
+final class LoopPointInstrumentationPass implements InstrumentationPass {
     
     private static final Method ON_BRANCH_METHOD = MethodUtils.getMatchingMethod(Watchdog.class, "onBranch");
 
@@ -49,31 +48,17 @@ final class BranchPointInstrumentationPass implements InstrumentationPass {
             MarkerType markerType = state.instrumentationSettings().getMarkerType();
             InsnList insnList = methodNode.instructions;
             
+            Set<Loop> loops = findLoops(methodNode.instructions, methodNode.tryCatchBlocks);
+            
             // Call the watchdog
-            AbstractInsnNode insnNode = insnList.getFirst();
-            while (insnNode != null) {
-                // On branch, invoke WatchDog.check()
-                if (insnNode instanceof JumpInsnNode
-                        || insnNode instanceof LookupSwitchInsnNode
-                        || insnNode instanceof TableSwitchInsnNode) {
-                    InsnList trackInsnList = merge(
-                            debugMarker(markerType, "Invoking watchdog branch tracker"),
-                            call(ON_BRANCH_METHOD, loadVar(watchdogVar))
-                    );
+            loops.stream().map(x -> x.getMaxInsnNode()).forEach(insnNode -> {
+                InsnList trackInsnList = merge(
+                    debugMarker(markerType, "Invoking watchdog branch tracker"),
+                    call(ON_BRANCH_METHOD, loadVar(watchdogVar))
+                );
 
-                    insnList.insertBefore(insnNode, trackInsnList);
-                }
-                
-                // IMPORTANT NOTE: We're applying checks BEFORE a branching operation. As such, branches resulting from a catch being
-                // triggered are not supported. But, it doesn't matter anyways -- going into a catch is normally a one-time thing. If you
-                // loop inside the catch or loop back out of the catch, it'll count a loop operation.
-                //
-                // There may be edge cases where you can loop infinitely through just by throwing and catching, but I doubt any JVM language
-                // does or will ever do this.
-                
-                // Move to next instruction
-                insnNode = insnNode.getNext();
-            }
+                insnList.insertBefore(insnNode, trackInsnList);
+            });
         }
     }
 }
