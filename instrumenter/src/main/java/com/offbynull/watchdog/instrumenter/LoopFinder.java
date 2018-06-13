@@ -104,7 +104,11 @@ final class LoopFinder {
                     || insnNode.getOpcode() == Opcodes.ARETURN
                     || insnNode.getOpcode() == Opcodes.ATHROW) {
                     // do nothing
-                    // special handling for ATHROW? branches IF in a try-catch of type being thrown -- otherwise we break out
+                    
+                    // Should we have special handling for ATHROW? If in a try-catch of type being thrown, otherwise we break out.
+                    //
+                    // This seems like something we should do, but the model we have right now of marking every instruction in a try-catch
+                    // block as a possible branch to the catch handler seems good enough for now. Do this in the future maybe.
                 } else {
                     AbstractInsnNode nextNode = insnNode.getNext();
                     if (nextNode != null) {
