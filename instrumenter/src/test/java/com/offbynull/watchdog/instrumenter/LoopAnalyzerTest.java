@@ -1,7 +1,6 @@
 package com.offbynull.watchdog.instrumenter;
 
 import com.offbynull.watchdog.instrumenter.LoopAnalyzer.Loop;
-import static com.offbynull.watchdog.instrumenter.LoopAnalyzer.walkCycles;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +16,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
+import static com.offbynull.watchdog.instrumenter.LoopAnalyzer.findLoops;
 
 public class LoopAnalyzerTest {
     
@@ -34,7 +34,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jump1, label1));
         assertEquals(expectedLoops, actualLoops);
@@ -50,7 +50,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jump1, label1));
         assertEquals(expectedLoops, actualLoops);
@@ -78,7 +78,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1_1, label1));
         expectedLoops.add(new Loop(jumpTo1_2, label1));
@@ -115,7 +115,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1, label1));
         expectedLoops.add(new Loop(jumpTo2, label2));
@@ -141,7 +141,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1, label1));
         expectedLoops.add(new Loop(jumpTo2, label2));
@@ -173,7 +173,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1, label1));
         expectedLoops.add(new Loop(jumpTo2_1, label2));
@@ -214,7 +214,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1, label1));
         expectedLoops.add(new Loop(jumpTo2, label2));
@@ -249,7 +249,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         assertEquals(expectedLoops, actualLoops);
     }
@@ -281,7 +281,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(tableSwitch, labelDefault));
         assertEquals(expectedLoops, actualLoops);
@@ -321,7 +321,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1_1, label1));
         assertEquals(expectedLoops, actualLoops);
@@ -355,7 +355,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         assertEquals(expectedLoops, actualLoops);
     }
@@ -387,7 +387,7 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(tableSwitch, labelDefault));
         assertEquals(expectedLoops, actualLoops);
@@ -427,9 +427,133 @@ public class LoopAnalyzerTest {
         
         List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
         
-        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(jumpTo1_1, label1));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopInLoopingTryCatch() {
+        LabelNode labelTryStart = new LabelNode();
+        LabelNode labelTryEnd = new LabelNode();
+        LabelNode labelTryCatch = new LabelNode();
+        JumpInsnNode jumpToTryCatch = new JumpInsnNode(Opcodes.IF_ICMPEQ, labelTryCatch);
+        InsnList insnList = new InsnList();
+        insnList.add(labelTryCatch);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelTryStart);
+        insnList.add(jumpToTryCatch);
+        insnList.add(labelTryEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        tryCatchBlockNodes.add(new TryCatchBlockNode(labelTryStart, labelTryEnd, labelTryCatch, null));
+        
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(jumpToTryCatch, labelTryCatch));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopInMultipleLoopingTryCatch() {
+        LabelNode labelTryStart_1 = new LabelNode();
+        LabelNode labelTryStart_2 = new LabelNode();
+        LabelNode labelTryEnd_1 = new LabelNode();
+        LabelNode labelTryEnd_2 = new LabelNode();
+        LabelNode labelTryCatch = new LabelNode();
+        JumpInsnNode jumpToTryCatch = new JumpInsnNode(Opcodes.IF_ICMPEQ, labelTryCatch);
+        InsnList insnList = new InsnList();
+        insnList.add(labelTryCatch);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelTryStart_1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelTryStart_2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelTryEnd_1);
+        insnList.add(jumpToTryCatch);
+        insnList.add(labelTryEnd_2);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        tryCatchBlockNodes.add(new TryCatchBlockNode(labelTryStart_1, labelTryEnd_1, labelTryCatch, null));
+        tryCatchBlockNodes.add(new TryCatchBlockNode(labelTryStart_2, labelTryEnd_2, labelTryCatch, null));
+        
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(insnList.get(3), labelTryCatch));
+        expectedLoops.add(new Loop(insnList.get(5), labelTryCatch));
+        expectedLoops.add(new Loop(insnList.get(7), labelTryCatch));
+        assertEquals(expectedLoops, actualLoops);
+    }
+
+    @Test
+    public void mustFindLoopInTightSelfLoopingTryCatch() {
+        LabelNode labelTryStart = new LabelNode();
+        LabelNode labelTryEnd = new LabelNode();
+        InsnList insnList = new InsnList();
+        insnList.add(labelTryStart);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelTryEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        tryCatchBlockNodes.add(new TryCatchBlockNode(labelTryStart, labelTryEnd, labelTryStart, null));
+        
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(insnList.get(1), labelTryStart));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindAnyLoopsInSelfLoopingTryCatchWithNoInsturctions() {
+        LabelNode labelTryStart = new LabelNode();
+        LabelNode labelTryEnd = new LabelNode();
+        InsnList insnList = new InsnList();
+        insnList.add(labelTryStart);
+        insnList.add(labelTryEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        tryCatchBlockNodes.add(new TryCatchBlockNode(labelTryStart, labelTryEnd, labelTryStart, null));
+        
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindMultipleLoopsInsideLargerLoopInsideMultipleTryCatch() {
+        LabelNode labelTryStart = new LabelNode();
+        LabelNode labelTryEnd = new LabelNode();
+        LabelNode labelTryCatch = new LabelNode();
+        LabelNode labelMain = new LabelNode();
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        JumpInsnNode jumpMain = new JumpInsnNode(Opcodes.IF_ICMPEQ, labelMain);
+        JumpInsnNode jumpTo1 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo2_1 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label2);
+        JumpInsnNode jumpTo2_2 = new JumpInsnNode(Opcodes.IF_ICMPNE, label2);
+        InsnList insnList = new InsnList();
+        insnList.add(labelMain);
+        insnList.add(label1);
+        insnList.add(new LdcInsnNode(1));
+        insnList.add(new LdcInsnNode(2));
+        insnList.add(jumpTo1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(label2);
+        insnList.add(new LdcInsnNode(1));
+        insnList.add(new LdcInsnNode(3));
+        insnList.add(jumpTo2_1);
+        insnList.add(jumpTo2_2);
+        insnList.add(jumpMain);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = findLoops(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(jumpTo1, label1));
+        expectedLoops.add(new Loop(jumpTo2_1, label2));
+        expectedLoops.add(new Loop(jumpTo2_2, label2));
+        expectedLoops.add(new Loop(jumpMain, labelMain));
         assertEquals(expectedLoops, actualLoops);
     }
 }

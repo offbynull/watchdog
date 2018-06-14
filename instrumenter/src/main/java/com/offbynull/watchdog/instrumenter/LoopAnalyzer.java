@@ -24,9 +24,11 @@ import java.util.Set;
 import org.apache.commons.lang3.Validate;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.FrameNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
@@ -36,12 +38,18 @@ final class LoopAnalyzer {
         // do nothing
     }
     
-    static Set<Loop> walkCycles(
+    static Set<Loop> findLoops(
             InsnList insnList,
             List<TryCatchBlockNode> tryCatchBlockNodes) {
         return walk(insnList.getFirst(), insnList, tryCatchBlockNodes, new HashSet<>());
     }
     
+    
+    // How does this work?
+    //
+    // It detects loops by walking all possible execution paths. The code walks down the instruction list until theres an instruction with
+    // one or more possible branches. It'll then fork the walk into those branches, and once they complete it'll continue the walk. The
+    // process is recrusive.
     private static Set<Loop> walk(
             AbstractInsnNode startInsnNode,
             InsnList insnList,
@@ -53,24 +61,36 @@ final class LoopAnalyzer {
         while (insnNode != null) {
             Validate.isTrue(insnNode.getOpcode() != Opcodes.JSR); // sanity check -- JSRs should be filtered out
             
+            
             // If the instruction is in a try-catch block, there's a possibility it can branch out to the catch handler
             for (TryCatchBlockNode tryCatchBlockNode : tryCatchBlockNodes) {
+                if (insnNode instanceof LabelNode
+                        || insnNode instanceof FrameNode
+                        || insnNode instanceof LineNumberNode) {
+                    // skip non-instructions
+                    continue;
+                }
+
                 int idx = insnList.indexOf(insnNode);
-                int startIdx = insnList.indexOf(tryCatchBlockNode.start);
-                int endIdx = insnList.indexOf(tryCatchBlockNode.end);
-                if (idx >= startIdx && idx <= endIdx) {
+                int startLabelIdx = insnList.indexOf(tryCatchBlockNode.start);
+                int endLabelIdx = insnList.indexOf(tryCatchBlockNode.end);
+                if (idx > startLabelIdx && idx < endLabelIdx) {
                     forkWalk(walkedLabels, insnList, tryCatchBlockNodes, insnNode, tryCatchBlockNode.handler, loops);
                 }
             }
 
-            if (insnNode instanceof LabelNode) {
+
+            if (insnNode instanceof FrameNode || insnNode instanceof LineNumberNode) {
+                // Skip non-instructions (labels aren't instructions but they need special handling -- handled in another branch)
+                insnNode = insnNode.getNext();
+            } else if (insnNode instanceof LabelNode) {
                 // If label, add it to the walked labels
                 LabelNode labelNode = (LabelNode) insnNode;
                 walkedLabels.add(labelNode);
                 
                 insnNode = insnNode.getNext();
             } else if (insnNode instanceof JumpInsnNode) {
-                // If jump, walk branch
+                // If jump, fork walk the label
                 JumpInsnNode jumpInsnNode = (JumpInsnNode) insnNode;
                 LabelNode labelNode = jumpInsnNode.label;
                 
@@ -82,7 +102,7 @@ final class LoopAnalyzer {
                     insnNode = insnNode.getNext();
                 }
             } else if (insnNode instanceof LookupSwitchInsnNode) {
-                // If switch, walk cases and default
+                // If switch, fork walk cases and default
                 LookupSwitchInsnNode lookupSwitchInsnNode = (LookupSwitchInsnNode) insnNode;
                 
                 for (LabelNode labelNode : lookupSwitchInsnNode.labels) {
@@ -91,7 +111,7 @@ final class LoopAnalyzer {
                 forkWalk(walkedLabels, insnList, tryCatchBlockNodes, insnNode, lookupSwitchInsnNode.dflt, loops);
                 insnNode = null;
             } else if (insnNode instanceof TableSwitchInsnNode) {
-                // If switch, walk cases and default
+                // If switch, fork walk cases and default
                 TableSwitchInsnNode tableSwitchInsnNode = (TableSwitchInsnNode) insnNode;
 
                 for (LabelNode labelNode : tableSwitchInsnNode.labels) {
@@ -130,14 +150,18 @@ final class LoopAnalyzer {
     private static void forkWalk(
             Set<LabelNode> walkedLabels, InsnList insnList, List<TryCatchBlockNode> tryCatchBlockNodes,
             AbstractInsnNode currentInsnNode, LabelNode labelNode, Set<Loop> container) {
+        // forking to a label we've already walked? it's a loop -- add a loop and leave
         if (walkedLabels.contains(labelNode)) {
             Loop loop = new Loop(currentInsnNode, labelNode);
             container.add(loop);
             return;
         }
         
-        walkedLabels = new HashSet<>(walkedLabels); // create a copy so it doesn't add to actual set
-        Set<Loop> cycles = walk(labelNode, insnList, tryCatchBlockNodes, walkedLabels);
+        // otherwise, start walking at the label
+          // copy walkedLabels because the call to walk adds elements -- we don't want to keep these
+          // elements because the call is a fork... doing stuff on a fork must not have sideeffects
+          // on what it was forked from.
+        Set<Loop> cycles = walk(labelNode, insnList, tryCatchBlockNodes, new HashSet<>(walkedLabels));
         container.addAll(cycles);
     }
         

@@ -17,7 +17,6 @@
 package com.offbynull.watchdog.instrumenter;
 
 import com.offbynull.watchdog.instrumenter.LoopAnalyzer.Loop;
-import static com.offbynull.watchdog.instrumenter.LoopAnalyzer.walkCycles;
 import com.offbynull.watchdog.instrumenter.asm.VariableTable.Variable;
 import com.offbynull.watchdog.instrumenter.generators.DebugGenerators.MarkerType;
 import static com.offbynull.watchdog.instrumenter.generators.DebugGenerators.debugMarker;
@@ -32,6 +31,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.MethodNode;
+import static com.offbynull.watchdog.instrumenter.LoopAnalyzer.findLoops;
 
 final class LoopPointInstrumentationPass implements InstrumentationPass {
     
@@ -48,7 +48,7 @@ final class LoopPointInstrumentationPass implements InstrumentationPass {
             MarkerType markerType = state.instrumentationSettings().getMarkerType();
             InsnList insnList = methodNode.instructions;
             
-            Set<Loop> loops = walkCycles(methodNode.instructions, methodNode.tryCatchBlocks);
+            Set<Loop> loops = findLoops(methodNode.instructions, methodNode.tryCatchBlocks);
             
             // Call the watchdog
             loops.stream()
