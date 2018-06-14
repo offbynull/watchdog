@@ -3,7 +3,6 @@ package com.offbynull.watchdog.instrumenter;
 import com.offbynull.watchdog.instrumenter.LoopAnalyzer.Loop;
 import static com.offbynull.watchdog.instrumenter.LoopAnalyzer.walkCycles;
 import java.util.ArrayList;
-import static java.util.Collections.emptyMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +14,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 
@@ -83,6 +83,42 @@ public class LoopAnalyzerTest {
         expectedLoops.add(new Loop(jumpTo1_1, label1));
         expectedLoops.add(new Loop(jumpTo1_2, label1));
         expectedLoops.add(new Loop(jumpTo1_3, label1));
+        assertEquals(expectedLoops, actualLoops);
+    }
+
+    @Test
+    public void mustFindMultipleOverlappingLoops() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        
+        JumpInsnNode jumpTo1 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo2 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label2);
+        InsnList insnList = new InsnList();
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new LdcInsnNode(1));
+        insnList.add(new LdcInsnNode(2));
+        insnList.add(jumpTo1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(new LdcInsnNode(1));
+        insnList.add(new LdcInsnNode(2));
+        insnList.add(jumpTo2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(jumpTo1, label1));
+        expectedLoops.add(new Loop(jumpTo2, label2));
         assertEquals(expectedLoops, actualLoops);
     }
     
@@ -186,7 +222,40 @@ public class LoopAnalyzerTest {
     }
     
     @Test
-    public void mustProperlyHandleTableSwitchLoops() {
+    public void mustNotFindAnyLoopsInABasicTableSwitch() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        LabelNode label3 = new LabelNode();
+        LabelNode labelDefault = new LabelNode();
+        LabelNode labelEnd = new LabelNode();
+        TableSwitchInsnNode tableSwitch = new TableSwitchInsnNode(0, 3, labelDefault, label1, label2, label3);
+        JumpInsnNode forceToEnd_1 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_2 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_3 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        InsnList insnList = new InsnList();
+        insnList.add(tableSwitch);
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_1);
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_2);
+        insnList.add(label3);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_3);
+        insnList.add(labelDefault);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopInSelfLoopingTableSwitch() {
         LabelNode label1 = new LabelNode();
         LabelNode label2 = new LabelNode();
         LabelNode label3 = new LabelNode();
@@ -215,6 +284,152 @@ public class LoopAnalyzerTest {
         Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
         Set<Loop> expectedLoops = new HashSet<>();
         expectedLoops.add(new Loop(tableSwitch, labelDefault));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopsInTableSwitchCasesThatJumpIntoEachother() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        LabelNode label3 = new LabelNode();
+        LabelNode labelDefault = new LabelNode();
+        LabelNode labelEnd = new LabelNode();
+        TableSwitchInsnNode tableSwitch = new TableSwitchInsnNode(0, 3, labelDefault, label1, label2, label3);
+        JumpInsnNode jumpTo1_1 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo1_2 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo1_3 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode forceToEnd_1 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_2 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_3 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        InsnList insnList = new InsnList();
+        insnList.add(tableSwitch);
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_1);
+        insnList.add(forceToEnd_1);
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_2);
+        insnList.add(forceToEnd_2);
+        insnList.add(label3);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_3);
+        insnList.add(forceToEnd_3);
+        insnList.add(labelDefault);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(jumpTo1_1, label1));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustNotFindAnyLoopsInABasicLookupSwitch() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        LabelNode label3 = new LabelNode();
+        LabelNode labelDefault = new LabelNode();
+        LabelNode labelEnd = new LabelNode();
+        LookupSwitchInsnNode tableSwitch = new LookupSwitchInsnNode(labelDefault, new int[] { 0, 1, 2}, new LabelNode[] { label1, label2, label3 });
+        JumpInsnNode forceToEnd_1 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_2 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_3 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        InsnList insnList = new InsnList();
+        insnList.add(tableSwitch);
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_1);
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_2);
+        insnList.add(label3);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_3);
+        insnList.add(labelDefault);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopInSelfLoopingLookupSwitch() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        LabelNode label3 = new LabelNode();
+        LabelNode labelDefault = new LabelNode();
+        LabelNode labelEnd = new LabelNode();
+        LookupSwitchInsnNode tableSwitch = new LookupSwitchInsnNode(labelDefault, new int[] { 0, 1, 2}, new LabelNode[] { label1, label2, label3 });
+        JumpInsnNode forceToEnd_1 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_2 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_3 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        InsnList insnList = new InsnList();
+        insnList.add(labelDefault);
+        insnList.add(tableSwitch);
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_1);
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_2);
+        insnList.add(label3);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(forceToEnd_3);
+        insnList.add(labelEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(tableSwitch, labelDefault));
+        assertEquals(expectedLoops, actualLoops);
+    }
+    
+    @Test
+    public void mustFindLoopsInLookupSwitchCasesThatJumpIntoEachother() {
+        LabelNode label1 = new LabelNode();
+        LabelNode label2 = new LabelNode();
+        LabelNode label3 = new LabelNode();
+        LabelNode labelDefault = new LabelNode();
+        LabelNode labelEnd = new LabelNode();
+        LookupSwitchInsnNode tableSwitch = new LookupSwitchInsnNode(labelDefault, new int[] { 0, 1, 2}, new LabelNode[] { label1, label2, label3 });
+        JumpInsnNode jumpTo1_1 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo1_2 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode jumpTo1_3 = new JumpInsnNode(Opcodes.IF_ICMPEQ, label1);
+        JumpInsnNode forceToEnd_1 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_2 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        JumpInsnNode forceToEnd_3 = new JumpInsnNode(Opcodes.GOTO, labelEnd);
+        InsnList insnList = new InsnList();
+        insnList.add(tableSwitch);
+        insnList.add(label1);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_1);
+        insnList.add(forceToEnd_1);
+        insnList.add(label2);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_2);
+        insnList.add(forceToEnd_2);
+        insnList.add(label3);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(jumpTo1_3);
+        insnList.add(forceToEnd_3);
+        insnList.add(labelDefault);
+        insnList.add(new InsnNode(Opcodes.NOP));
+        insnList.add(labelEnd);
+        
+        List<TryCatchBlockNode> tryCatchBlockNodes = new ArrayList<>();
+        
+        Set<Loop> actualLoops = walkCycles(insnList, tryCatchBlockNodes);
+        Set<Loop> expectedLoops = new HashSet<>();
+        expectedLoops.add(new Loop(jumpTo1_1, label1));
         assertEquals(expectedLoops, actualLoops);
     }
 }
